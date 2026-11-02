@@ -59,9 +59,14 @@ curl -fsSL https://raw.githubusercontent.com/gke-labs/kube-agents/<RELEASE>/inst
   --github-app-id=5579804 --github-pem-path=$HOME/.kcna26/app.pem \
   --slack-bot-token="$(cat ~/.kcna26/slack-bot-token)" \
   --slack-app-token="$(cat ~/.kcna26/slack-app-token)" \
-  --slack-home-channel=C0CEZ07K39N --slack-allowed-users=<U…,U…>
+  --slack-home-channel=C0CEZ07K39N --slack-allowed-users=U0CDYBNMHV1
 scripts/contexts.sh $PROJECT
 ```
+
+Only allowlisted Slack members can give the agent instructions. To add booth staff later, append
+their member IDs (comma-separated) to `SLACK_ALLOWED_USERS` in `install.env` and re-run the same
+installer command with the matching `--slack-allowed-users`; a re-run refuses a flag that
+disagrees with `install.env`.
 
 Scope defaults to the install's own project, which holds all four clusters. Confirm the Platform
 Agent has scaffolded a Cluster Agent for each (`boutique-prod`, `bank-prod`, the compute cluster),
