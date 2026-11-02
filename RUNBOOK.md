@@ -57,8 +57,37 @@ member IDs to `SLACK_ALLOWED_USERS` in both `~/.kcna26/install.env` and `install
 re-run it; the installer refuses a flag that disagrees with `install.env`.
 
 Scope defaults to the install's own project, which holds all four clusters. Confirm the Platform
-Agent has scaffolded a Cluster Agent for each (`boutique-prod`, `bank-prod`, the compute cluster),
-then smoke-test once: `scripts/trigger-oom.sh`, wait for the alert, `scripts/reset.sh`.
+Agent has scaffolded a Cluster Agent for each (`boutique-prod`, `bank-prod`, the compute cluster):
+
+```bash
+kubectl --context kube-agents-hub exec -n kubeagents-system deploy/platform-agent-gateway \
+  -c platform-agent -- ls /opt/data/profiles
+```
+
+**Then restart the agent pod once.** The event watcher reads that list only at startup, and on a
+fresh install it starts before the Cluster Agents exist, so it watches the hub alone. The same
+applies whenever a cluster joins later (the compute demo cluster):
+
+```bash
+kubectl --context kube-agents-hub delete pod -n kubeagents-system \
+  -l app=platform-agent-gateway
+kubectl --context kube-agents-hub logs -n kubeagents-system deploy/platform-agent-gateway \
+  -c agent-api-auth | grep 'watching .* cluster(s)'   # expect every cluster
+```
+
+Then smoke-test once: `scripts/trigger-oom.sh`, wait for the alert, `scripts/reset.sh`.
+
+Install troubleshooting from the first build (2026-11-02, release 0.23.0):
+
+- **GCE stockout.** `us-central1-a` and, briefly, the `us-central1` region could not place
+  nodes. Delete a cluster left in `ERROR` before re-running; the installer adopts an existing
+  cluster and fails against one that serves no API.
+- **KMS key `409 already exists` on a re-run.** The installer imports the key it created before
+  Terraform runs; that import fails while KMS is still propagating, or while the state still
+  holds a deleted cluster. Re-run once the cluster exists. Until then `github-token-minter`
+  crashloops with `PermissionDenied` on the key.
+- **Helm `context deadline exceeded`** on the first apply: Autopilot was still adding nodes.
+  Re-run.
 
 Leave `INCIDENT_TRIAGE_OPEN_PULL_REQUEST` unset: the presenter clicking the fix option is the
 human-in-the-loop moment.
