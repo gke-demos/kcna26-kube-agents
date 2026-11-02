@@ -1,0 +1,8 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.pem
+install.env
+video/*.mp4
+__pycache__/
