@@ -114,8 +114,13 @@ Do not merge them; they are what the talk shows.
 
 ## 3. Before the talk (T-30 min)
 
-- [ ] `scripts/reset.sh`, then `scripts/preflight.sh` passes.
-- [ ] Slack: `#platform-ops` open, scrolled so last night's audit card is the latest message.
+- [ ] `scripts/reset.sh`, then `scripts/preflight.sh` passes. If it reports cards on the agent
+      board, let them finish or archive them (`hermes kanban list` / `hermes kanban archive <id>`
+      in the `platform-agent` container, `HERMES_HOME=/opt/data/profiles/platform`). Background
+      cards share a few worker slots, and an incident queued behind them waits.
+- [ ] `python3 -I tools/clear_channel.py --keep audit`: removes the bot's earlier alerts and
+      drift notes and keeps the audit cards. Then open `#platform-ops`.
+- [ ] Do nothing by hand on any cluster from here on: every manual change raises a drift alert.
 - [ ] Browser tabs: the compliance audit issue, the `cluster-admin` fix PR, the fleet repo's PR
       list, the Online Boutique storefront.
 - [ ] Terminal: large font, in this repo, `scripts/trigger-oom.sh` typed but not run.
@@ -127,7 +132,8 @@ Do not merge them; they are what the talk shows.
 
 | t     | Do                                                                                                                                                       | Say (gist)                                                                                       |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 0:00  | Run `scripts/trigger-oom.sh`.                                                                                                                            | "Someone just merged a memory tune-up to the shop. Let's leave that and come back."             |
+| T-15  | **At the start of the talk, before the first slide**, run `scripts/trigger-oom.sh`. The alert takes about 6 minutes (Config Sync, three OOM restarts, the watcher's 2-minute settle) and the triage several more. | (silent)                                                                                         |
+| 0:00  | Demo starts.                                                                                                                                             | "When I walked on stage I merged a memory tune-up to the shop. We'll come back to it."          |
 | 0:30  | Slide: the fleet.                                                                                                                                        | Three clusters, two apps, one GitOps repo. The agents can read everything and change nothing.   |
 | 1:30  | Slack: the audit card. Open the compliance issue, then the `cluster-admin` fix PR.                                                                         | It audited the fleet overnight, filed one ledger issue per audit, and opened fixes for the criticals. |
 | 3:00  | Ask prompt 1.                                                                                                                                            | Ask it about its own findings.                                                                  |
@@ -137,8 +143,8 @@ Do not merge them; they are what the talk shows.
 | 10:00 | Slide: how it's built.                                                                                                                                   | See `slides/architecture.md`.                                                                   |
 | 11:00 | Slide: where it's going.                                                                                                                                 | See `slides/roadmap.md`.                                                                        |
 
-If the alert hasn't landed by 4:30, do prompt 2 first, then come back. If it hasn't landed by
-8:00, play the incident backup clip.
+If the triage hasn't edited the alert by 4:30, do prompt 2 first, then come back. If it still
+hasn't by 8:00, play the incident backup clip.
 
 After the talk: `scripts/reset.sh`.
 

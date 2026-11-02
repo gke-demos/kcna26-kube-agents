@@ -12,6 +12,9 @@ source "$SCRIPT_DIR/common.sh"
 
 readonly HUB_CONTEXT="kube-agents-hub"
 readonly AGENT_NAMESPACE="kubeagents-system"
+readonly AGENT_DEPLOYMENT="platform-agent-gateway"
+readonly AGENT_CONTAINER="platform-agent"
+readonly PLATFORM_HERMES_HOME="/opt/data/profiles/platform"
 readonly ROOTSYNC_NAMESPACE="config-management-system"
 readonly ROOTSYNC_NAME="root-sync"
 readonly AUDIT_LABEL="agent:audit"
@@ -71,6 +74,13 @@ done
 echo "$HUB_CONTEXT"
 pending="$(not_ready_pods "$HUB_CONTEXT" "$AGENT_NAMESPACE")"
 [[ -z "$pending" ]] && ok "all $AGENT_NAMESPACE pods ready" || bad "not ready: $(echo "$pending" | paste -sd' ')"
+# Background cards share a few worker slots; anything left running or queued
+# delays the demo's incident triage behind it.
+busy="$(kubectl --context "$HUB_CONTEXT" exec -n "$AGENT_NAMESPACE" deploy/"$AGENT_DEPLOYMENT" \
+  -c "$AGENT_CONTAINER" -- sh -c "HERMES_HOME=$PLATFORM_HERMES_HOME hermes kanban list" 2>/dev/null |
+  grep -E -c ' (running|ready) ')"
+[[ "$busy" == "0" ]] && ok "agent board idle" ||
+  bad "$busy cards running or queued on the agent board: finish or archive them (RUNBOOK §3)"
 
 echo
 ((failures == 0)) && echo "preflight passed" || echo "preflight: $failures failed"
