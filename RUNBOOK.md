@@ -51,7 +51,7 @@ curl -fsSL https://raw.githubusercontent.com/gke-labs/kube-agents/<RELEASE>/inst
   --model-provider=gemini \
   --permission-set=read-only \
   --gitops-org=gke-demos --gitops-repo=kcna26-fleet-gitops \
-  --github-app-id=<APP_ID> --github-pem-path=<KEY.pem> \
+  --github-app-id=5579804 --github-pem-path=$HOME/.kcna26/app.pem \
   --slack-bot-token=<xoxb-…> --slack-app-token=<xapp-…> \
   --slack-home-channel=<CHANNEL_ID> --slack-allowed-users=<U…,U…>
 scripts/contexts.sh $PROJECT
