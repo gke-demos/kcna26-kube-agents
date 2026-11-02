@@ -7,9 +7,16 @@ assume the kubeconfig contexts `scripts/contexts.sh` creates.
 
 Prerequisites, none of which needs the project:
 
-- **GitHub App on `gke-demos`** with Contents, Pull requests and Issues read/write, installed on
-  `kcna26-fleet-gitops` only. Keep its App ID and private key; see the kube-agents
-  [token minter guide](https://gke-labs.github.io/kube-agents/deploy/token-minter/).
+- **GitHub App** `kube-agents-platform-agent` (fallback `kcna26-platform-agent` if the name is
+  taken), owned by `gke-demos` (org Settings → Developer settings → GitHub Apps). Its name is what
+  the audience sees on every PR, as `<slug>[bot]`.
+  - Permissions: Contents, Pull requests and Issues read/write. Webhook off.
+  - Installable on this account only. Installed on `kcna26-fleet-gitops` only.
+  - Generate a private key and keep the `.pem` outside every repo (e.g. `~/.kcna26/app.pem`). The
+    App ID is not a credential.
+  - At install, `--github-pem-path` imports the key into Cloud KMS. Delete the `.pem` once it has
+    (needs `go` 1.21+ and KMS admin on the install host). See the kube-agents
+    [token minter guide](https://gke-labs.github.io/kube-agents/deploy/token-minter/).
 - **Slack workspace and app**: a demo workspace with a `#platform-ops` channel and no real names
   in it; set up the app per [Slack app setup](https://gke-labs.github.io/kube-agents/install/slack-app/).
   Keep the bot token, app token and channel ID.
