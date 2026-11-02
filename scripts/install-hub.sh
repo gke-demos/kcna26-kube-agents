@@ -13,6 +13,9 @@ readonly PROJECT="${PROJECT:-kcna-2026-demos}"
 readonly CRED_DIR="${CRED_DIR:-$HOME/.kcna26}"
 readonly HUB_CLUSTER="kube-agents-hub"
 readonly REGION="us-central1"
+# Gemini on Vertex AI through Workload Identity: no API key. Newer Gemini
+# models are served from the global endpoint.
+readonly VERTEX_LOCATION="global"
 readonly FLEET_ORG="gke-demos"
 readonly FLEET_REPO_NAME="kcna26-fleet-gitops"
 readonly GITHUB_APP_ID="5579804"
@@ -48,7 +51,8 @@ CLOUDSDK_ACTIVE_CONFIG_NAME="${CLOUDSDK_ACTIVE_CONFIG_NAME:-kcna26}" \
   --gcp-project-id="$PROJECT" \
   --gke-cluster-name="$HUB_CLUSTER" \
   --gcp-region="$REGION" \
-  --model-provider=gemini \
+  --model-provider=vertex_ai \
+  --vertex-location="$VERTEX_LOCATION" \
   --permission-set=read-only \
   --gitops-org="$FLEET_ORG" \
   --gitops-repo="$FLEET_REPO_NAME" \

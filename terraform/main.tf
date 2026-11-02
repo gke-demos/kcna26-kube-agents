@@ -132,7 +132,9 @@ resource "google_gke_hub_feature_membership" "config_sync" {
   membership_location = google_container_cluster.workload[each.key].fleet[0].membership_location
 
   configmanagement {
-    management = "MANAGEMENT_AUTOMATIC"
+    # New installs refuse MANAGEMENT_AUTOMATIC. Manual installs the current
+    # version and holds it, which suits a frozen demo.
+    management = "MANAGEMENT_MANUAL"
     config_sync {
       enabled       = true
       source_format = "unstructured"
