@@ -10,7 +10,7 @@ variable "region" {
 
 variable "zone" {
   type    = string
-  default = "us-central1-a"
+  default = "us-central1-b"
 }
 
 variable "bank_prod_master_version" {

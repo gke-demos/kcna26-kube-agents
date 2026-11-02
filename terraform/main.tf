@@ -14,6 +14,7 @@ locals {
     "container.googleapis.com",
     "gkehub.googleapis.com",
     "anthosconfigmanagement.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
   ]
 }
 

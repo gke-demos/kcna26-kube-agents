@@ -1,6 +1,6 @@
 # Runbook
 
-All commands run from this repository's root with `PROJECT` set to the demo project. Scripts
+All commands run from this repository's root with `PROJECT` set to the demo project (`kcna-2026-demos`). Scripts
 assume the kubeconfig contexts `scripts/contexts.sh` creates.
 
 ## 1. Build (once)
@@ -27,46 +27,34 @@ Prerequisites, none of which needs the project:
   - Full detail: [Slack app setup](https://gke-labs.github.io/kube-agents/install/slack-app/).
 - **Fleet repo** `gke-demos/kcna26-fleet-gitops` (public) at its `baseline` tag.
 
-Then, in the project:
+Then, in the project (`kcna-2026-demos`). Run gcloud under a configuration whose account owns the
+project; the scripts honour `CLOUDSDK_ACTIVE_CONFIG_NAME` (the build used one named `kcna26`).
 
 ```bash
-# Workload clusters + Config Sync. bank-prod starts one minor behind.
+export PROJECT=kcna-2026-demos CLOUDSDK_ACTIVE_CONFIG_NAME=kcna26
+scripts/bootstrap-project.sh $PROJECT        # APIs + gs://$PROJECT-tfstate
+
+# Workload clusters + Config Sync, in us-central1-b (us-central1-a was stocked out on
+# 2026-11-02). bank-prod starts one minor behind.
 cd terraform
-terraform init
-terraform apply -var project_id=$PROJECT \
+terraform init -backend-config=bucket=$PROJECT-tfstate
+GOOGLE_CLOUD_QUOTA_PROJECT=$PROJECT terraform apply -var project_id=$PROJECT \
   -var bank_prod_master_version=$(../scripts/lagging-version.sh $PROJECT)
 cd ..
-```
 
-Install kube-agents on the hub with its own installer, pinned to the release or commit you
-freeze on. Put the alert ceilings in `install.env` first, so the booth never runs out of alerts
-in a day:
-
-```bash
-cat >> install.env <<'EOF'
-ALERT_DAILY_LIMIT_CRITICAL=500
-ALERT_DAILY_LIMIT_WARNING=500
-EOF
-curl -fsSL https://raw.githubusercontent.com/gke-labs/kube-agents/<RELEASE>/install.sh | bash -s -- \
-  --non-interactive \
-  --mode=next \
-  --gcp-project-id=$PROJECT \
-  --gke-cluster-name=kube-agents-hub \
-  --gcp-region=us-central1 \
-  --model-provider=gemini \
-  --permission-set=read-only \
-  --gitops-org=gke-demos --gitops-repo=kcna26-fleet-gitops \
-  --github-app-id=5579804 --github-pem-path=$HOME/.kcna26/app.pem \
-  --slack-bot-token="$(cat ~/.kcna26/slack-bot-token)" \
-  --slack-app-token="$(cat ~/.kcna26/slack-app-token)" \
-  --slack-home-channel=C0CEZ07K39N --slack-allowed-users=U0CDYBNMHV1
+# kube-agents on the hub, pinned to one release. Reads its credentials from ~/.kcna26 and
+# keeps the generated install.env (alert ceilings raised for the booth) there too.
+scripts/install-hub.sh --dry-run
+scripts/install-hub.sh
 scripts/contexts.sh $PROJECT
 ```
 
-Only allowlisted Slack members can give the agent instructions. To add booth staff later, append
-their member IDs (comma-separated) to `SLACK_ALLOWED_USERS` in `install.env` and re-run the same
-installer command with the matching `--slack-allowed-users`; a re-run refuses a flag that
-disagrees with `install.env`.
+`install-hub.sh` passes `--enable-slack` explicitly: a non-interactive install with only the
+Slack tokens turns chat off.
+
+Only allowlisted Slack members can give the agent instructions. To add booth staff, append their
+member IDs to `SLACK_ALLOWED_USERS` in both `~/.kcna26/install.env` and `install-hub.sh`, and
+re-run it; the installer refuses a flag that disagrees with `install.env`.
 
 Scope defaults to the install's own project, which holds all four clusters. Confirm the Platform
 Agent has scaffolded a Cluster Agent for each (`boutique-prod`, `bank-prod`, the compute cluster),
@@ -78,7 +66,7 @@ human-in-the-loop moment.
 **Freeze** after the first clean run-through: record the image tag here and do not upgrade.
 Never restart the gateway during a session; it runs as a single replica.
 
-Frozen at: `<image tag>` on `<date>`.
+Installed: release `0.23.0` (image tag `0.23.0`) on 2026-11-02. Frozen once the first run-through is clean.
 
 ## 2. Pre-stage the audits
 

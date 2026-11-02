@@ -1,5 +1,11 @@
 terraform {
   required_version = ">= 1.6"
+
+  # Partial config: terraform init -backend-config=bucket=<project>-tfstate
+  backend "gcs" {
+    prefix = "workload-clusters"
+  }
+
   required_providers {
     google = {
       source  = "hashicorp/google"

@@ -7,7 +7,7 @@ set -euo pipefail
 
 readonly HUB_CLUSTER="kube-agents-hub"
 readonly HUB_REGION="us-central1"
-readonly WORKLOAD_ZONE="us-central1-a"
+readonly WORKLOAD_ZONE="${WORKLOAD_ZONE:-us-central1-b}"
 readonly WORKLOAD_CLUSTERS=(boutique-prod bank-prod)
 
 project="${1:?usage: contexts.sh <project>}"

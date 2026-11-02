@@ -6,7 +6,7 @@
 # Usage: lagging-version.sh <project> [zone]
 set -euo pipefail
 
-readonly DEFAULT_ZONE="us-central1-a"
+readonly DEFAULT_ZONE="us-central1-b"
 readonly CHANNEL="REGULAR"
 
 project="${1:?usage: lagging-version.sh <project> [zone]}"
