@@ -1,0 +1,52 @@
+# Slack app for the Cymbal demo workspace (kube-agents, spec.mode: next).
+# Create with api.slack.com/apps -> Create New App -> From a manifest.
+# Source: kube-agents docs/site/src/content/docs/install/slack-app.md; only the
+# descriptions differ. Keep callback_id ask_about_message: the gateway matches it.
+display_information:
+  name: kube-agents
+  description: Cymbal's platform agent for the GKE fleet
+features:
+  app_home:
+    home_tab_enabled: true
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: kube-agents
+    always_online: true
+  assistant_view:
+    assistant_description: Ask kube-agents about Cymbal's clusters.
+  shortcuts:
+    - name: Ask about this
+      type: message
+      callback_id: ask_about_message
+      description: kube-agents looks into this message and answers in its thread
+oauth_config:
+  scopes:
+    bot:
+      - assistant:write
+      - channels:history
+      - channels:read
+      - chat:write
+      - commands
+      - groups:history
+      - groups:read
+      - im:history
+      - im:read
+      - mpim:history
+      - mpim:read
+      - reactions:write
+      - users:read
+settings:
+  event_subscriptions:
+    bot_events:
+      - agent_session_stopped
+      - app_home_opened
+      - assistant_thread_started
+      - message.channels
+      - message.groups
+      - message.im
+      - message.mpim
+  interactivity:
+    is_enabled: true
+  socket_mode_enabled: true
+  token_rotation_enabled: false

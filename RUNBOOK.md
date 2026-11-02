@@ -17,9 +17,14 @@ Prerequisites, none of which needs the project:
   - At install, `--github-pem-path` imports the key into Cloud KMS. Delete the `.pem` once it has
     (needs `go` 1.21+ and KMS admin on the install host). See the kube-agents
     [token minter guide](https://gke-labs.github.io/kube-agents/deploy/token-minter/).
-- **Slack workspace and app**: a demo workspace with a `#platform-ops` channel and no real names
-  in it; set up the app per [Slack app setup](https://gke-labs.github.io/kube-agents/install/slack-app/).
-  Keep the bot token, app token and channel ID.
+- **Slack workspace "Cymbal" and app**:
+  - Create the app from [`slack/app-manifest.yaml`](slack/app-manifest.yaml) (Create New App → From
+    a manifest).
+  - Generate the app token (`xapp-…`, scope `connections:write`). Install to the workspace for the
+    bot token (`xoxb-…`). Keep both under `~/.kcna26/`, outside every repo.
+  - Create `#platform-ops`, `/invite @kube-agents`, and copy its Channel ID.
+  - Collect the member IDs of everyone who will drive the demo.
+  - Full detail: [Slack app setup](https://gke-labs.github.io/kube-agents/install/slack-app/).
 - **Fleet repo** `gke-demos/kcna26-fleet-gitops` (public) at its `baseline` tag.
 
 Then, in the project:
