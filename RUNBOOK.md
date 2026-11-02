@@ -137,13 +137,13 @@ Do not merge them; they are what the talk shows.
 | 0:30  | Slide: the fleet.                                                                                                                                        | Three clusters, two apps, one GitOps repo. The agents can read everything and change nothing.   |
 | 1:30  | Slack: the audit card. Open the compliance issue, then the `cluster-admin` fix PR.                                                                         | It audited the fleet overnight, filed one ledger issue per audit, and opened fixes for the criticals. |
 | 3:00  | Ask prompt 1.                                                                                                                                            | Ask it about its own findings.                                                                  |
-| 4:30  | The alert has landed and the triage has edited it in place. Read the diagnosis and click the recommended option. The "PR opened" card appears; open the diff. | Diagnosis came from the Cluster Agent on boutique-prod, which is read-only. The fix is a PR.   |
+| 4:30  | The alert has landed and the triage report is in its thread. Read the diagnosis and click the recommended (highlighted) option button. The "PR opened" card appears; open the diff. | Diagnosis came from the Cluster Agent on boutique-prod, which is read-only. The fix is a PR.   |
 | 6:30  | Merge the PR. Show the pod go Ready (storefront or `kubectl get pods -w`).                                                                                | A human merged it, Config Sync applied it. That's the only way anything changes.               |
 | 8:00  | Ask prompt 2.                                                                                                                                            | Ad-hoc questions across the fleet.                                                             |
 | 10:00 | Slide: how it's built.                                                                                                                                   | See `slides/architecture.md`.                                                                   |
 | 11:00 | Slide: where it's going.                                                                                                                                 | See `slides/roadmap.md`.                                                                        |
 
-If the triage hasn't edited the alert by 4:30, do prompt 2 first, then come back. If it still
+If the triage report is not in the alert's thread by 4:30, do prompt 2 first, then come back. If it still
 hasn't by 8:00, play the incident backup clip.
 
 After the talk: `scripts/reset.sh`.
