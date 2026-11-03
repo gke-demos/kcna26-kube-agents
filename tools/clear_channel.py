@@ -30,6 +30,8 @@ PAGE_SIZE = 200
 # chat.delete is Slack's Tier 3 (about 50 a minute).
 DELETE_INTERVAL_SECONDS = 1.3
 RATE_LIMIT_FALLBACK_SECONDS = 5
+# chat.delete errors that mean "not this message", not "stop".
+SKIPPABLE_ERRORS = {"cant_delete_message", "message_not_found"}
 
 
 def call(token, method, params, post=False):
@@ -48,8 +50,14 @@ def call(token, method, params, post=False):
                 continue
             raise
         if not body.get("ok"):
-            raise SystemExit(f"{method}: {body.get('error')}")
+            raise SlackError(method, body.get("error"))
         return body
+
+
+class SlackError(Exception):
+    def __init__(self, method, error):
+        super().__init__(f"{method}: {error}")
+        self.error = error
 
 
 def paged(token, method, params, key):
@@ -92,10 +100,19 @@ def main(argv):
     print(f"{len(targets)} bot messages to delete, {kept} kept by --keep")
     if args.dry_run:
         return 0
+    deleted, skipped = 0, 0
     for ts in targets:
-        call(token, "chat.delete", {"channel": CHANNEL_ID, "ts": ts}, post=True)
+        try:
+            call(token, "chat.delete", {"channel": CHANNEL_ID, "ts": ts}, post=True)
+            deleted += 1
+        except SlackError as err:
+            # Some bot posts (e.g. ones Slack attributes to another app
+            # identity) refuse deletion with this token; skip them.
+            if err.error not in SKIPPABLE_ERRORS:
+                raise SystemExit(str(err))
+            skipped += 1
         time.sleep(DELETE_INTERVAL_SECONDS)
-    print("done")
+    print(f"done: deleted {deleted}, skipped {skipped} the token may not delete")
     return 0
 
 
