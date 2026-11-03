@@ -1,0 +1,18 @@
+{
+  "name": "substrate-scope-web",
+  "version": "0.0.0-dev",
+  "private": true,
+  "type": "module",
+  "description": "Front-end tooling for substrate-scope: lint, unit tests and screenshots. Nothing is bundled; web/ is served as-is.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "lint": "eslint web",
+    "test": "node --test web/js/*.test.js",
+    "screens": "node hack/screens.mjs"
+  },
+  "devDependencies": {
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "playwright": "^1.55.0"
+  }
+}
