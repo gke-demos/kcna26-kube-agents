@@ -124,7 +124,7 @@ test('OOM: each step in turn, from the response to healthy again', () => {
   assert.equal(byId(r, 'report').state, DONE);
   assert.equal(byId(r, 'report').detail, 'Recommended: Option B — Increase to 440Mi with headroom');
   assert.equal(byId(r, 'fix').state, ACTIVE);
-  assert.match(byId(r, 'fix').hint, /Choose the fix in Slack/);
+  assert.match(byId(r, 'fix').hint, /choose one in Slack/);
 
   r = deriveSteps(p, failing, incident(600), ms(610));
   assert.equal(byId(r, 'fix').label, 'Fix chosen by sre-oncall');

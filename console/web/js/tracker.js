@@ -420,7 +420,7 @@ function incidentSteps(ctx) {
 
   const reportAt = report ? atOf(report) : alertAt;
   const fix = report ? threaded.find((e) => e.type === 'fix_chosen' && (atOf(e) >= reportAt || (thread && e.thread === thread))) : null;
-  const chosen = step('fix', 'Fix chosen', { usual: 0, hint: 'Choose the fix in Slack: a button on the report, or reply "apply"', thread });
+  const chosen = step('fix', 'Fix chosen', { usual: 0, hint: 'The agent opens its recommended fix itself, or choose one in Slack (a button on the report, or reply "apply")', thread });
   if (fix) {
     const letter = chosenLetter(fix, options);
     const opt = options.find((o) => o.letter === letter);
@@ -434,6 +434,14 @@ function incidentSteps(ctx) {
 
   const prs = mine.filter((e) => (e.type === 'pr_opened' || e.type === 'pr_merged' || e.type === 'pr_closed') && (!alert || atOf(e) >= alertAt));
   const opened = prs.find((e) => e.type === 'pr_opened');
+  if (!fix && opened && chosen.state !== DONE) {
+    // No one chose: the agent opened its recommended fix itself
+    // (INCIDENT_TRIAGE_OPEN_PULL_REQUEST).
+    chosen.state = DONE;
+    chosen.at = atOf(opened);
+    chosen.label = 'Recommended fix, opened by the agent';
+    chosen.hint = '';
+  }
   const prLink = opened?.link || '';
   const samePR = (e) => !prLink || !e.link || e.link === prLink;
   const merged = prs.find((e) => e.type === 'pr_merged' && samePR(e));
