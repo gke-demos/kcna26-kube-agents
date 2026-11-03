@@ -51,6 +51,10 @@ scripts/contexts.sh $PROJECT
 # Merged fixes land in ~30s instead of waiting up to 5 minutes behind the broken apply.
 scripts/tune-config-sync.sh
 
+# The triage opens its recommended fix as a PR itself (a human still merges). Re-run after
+# any install-hub.sh run: the installer rewrites the PlatformAgent's env.
+scripts/tune-agent.sh
+
 # The console, at https://kcna26.demo.gke.ninja behind IAP (needs ~/.kcna26/github-pat and
 # the OAuth client files).
 scripts/console.sh build
