@@ -31,6 +31,8 @@ import { DECK_KEYS, layoutId, beamModeId, scrollModeId } from './decks.js';
 import { inkOn } from './themes.js';
 import { PerfOverlay } from './perf.js';
 import { ControlsTour } from './tour-ui.js';
+import { ThreadDrawer } from './drawer.js';
+import { latestThread } from './thread.js';
 
 const $ = (sel) => document.querySelector(sel);
 /** Short state names for the header chips on narrower screens. */
@@ -122,6 +124,8 @@ const panel = new Panel($('#panel'), {
   agent: (key) => model.agents.get(key),
   worker: (name) => model.workers.get(name),
   signals: (key) => signalsFor(key),
+  threadFor: (key) => latestThread(signalEvents, key),
+  onThread: (thread) => openThread(thread),
   iconStyle: (sig) => {
     const c = signalColor(currentTheme || themes.theme, sig);
     return `--c:${c};--ci:${inkOn(c)}`;
@@ -174,19 +178,53 @@ function renderLinks(links) {
 const SIGNALS_MAX = 300;
 const signals = [];
 const signalSeen = new Set();
+// The signal events themselves (oldest first), for the thread view: the
+// feed's lines keep only what a line shows.
+const SIGNAL_EVENTS_MAX = 1000;
+const signalEvents = [];
 
 function signalsFor(key) {
   return signals.filter((s) => s.key === key);
 }
 
-/** Records a signal line and feeds it; false when the feed already has it. */
-function addSignal(item) {
+/** Records a signal event and its line, and feeds it; false when the feed already has it. */
+function addSignal(e) {
+  const item = describeSignal(e);
   if (signalSeen.has(item.id)) return false;
   signalSeen.add(item.id);
   signals.unshift(item);
   if (signals.length > SIGNALS_MAX) signalSeen.delete(signals.pop().id);
+  signalEvents.push(e);
+  if (signalEvents.length > SIGNAL_EVENTS_MAX) signalEvents.shift();
   feed(item);
   return true;
+}
+
+// ------------------------------------------------------------ thread view
+
+// An incident's Slack thread in a drawer on the right. It takes the side
+// panel's slot: while it is open the panel hides, and "← workload details"
+// brings the panel back.
+const drawer = new ThreadDrawer($('#drawer'), {
+  events: () => signalEvents,
+  agent: (key) => model.agents.get(key),
+  healthy: (key) => stateClass(model.agents.get(key)?.state) === 'running',
+  onClose: () => closeThread(),
+  onDetails: (key) => {
+    closeThread();
+    select(key, false);
+  },
+});
+
+function openThread(thread) {
+  if (!thread) return;
+  drawer.open(thread);
+  document.body.classList.add('drawer-open');
+}
+
+function closeThread() {
+  drawer.close();
+  document.body.classList.remove('drawer-open');
 }
 
 // ------------------------------------------------------------------ stream
@@ -207,7 +245,8 @@ const streamHandlers = {
     }
     // The latest signals, oldest first: into the feed without replaying
     // their effects (the ones already shown are skipped).
-    for (const e of model.recent) if (isSignal(e)) addSignal(describeSignal(e));
+    for (const e of model.recent) if (isSignal(e)) addSignal(e);
+    drawer.eventsChanged(null);
     controls.setEnabled(model.features?.actions);
     renderLinks(model.features?.links);
     refreshChrome(true);
@@ -220,13 +259,14 @@ const streamHandlers = {
     if (!model.applyEvents(events)) return false;
     for (const e of events) eventCounts[e.type] = (eventCounts[e.type] || 0) + 1;
     scene.applyEvents(events);
-    const lines = describe(events);
     // Signals go straight in (they are few and they are the story);
     // workload changes are batched.
-    let sigs = false;
-    for (const l of lines) if (l.type === 'signal') sigs = addSignal(l) || sigs;
-    queueFeed(lines.filter((l) => l.type !== 'signal'));
+    const sigEvents = events.filter((e) => isSignal(e) && addSignal(e));
+    const sigs = sigEvents.length > 0;
+    queueFeed(describe(events.filter((e) => !isSignal(e))));
     refreshChrome();
+    if (sigs) drawer.eventsChanged(sigEvents);
+    if (drawer.key && events.some((e) => e.key === drawer.key && !isSignal(e))) drawer.agentChanged(drawer.key);
     if (selected) {
       const a = model.agents.get(selected);
       if (!a) select(null);
@@ -315,6 +355,8 @@ $('#beams').addEventListener('click', (e) => {
 setBeams(looks0.beams, false);
 
 function select(key, fly = true) {
+  // Another workload (or none) takes the slot back from the thread view.
+  if (drawer.isOpen && key !== drawer.key) closeThread();
   selected = key;
   scene.select(key);
   if (key) {
@@ -410,8 +452,12 @@ $('#legend').addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   const typing = document.activeElement?.tagName === 'INPUT';
   if (e.key === 'Escape') {
-    scene.pinWorker(null);
-    select(null);
+    // Esc closes the thread view first, then the selection.
+    if (drawer.isOpen) closeThread();
+    else {
+      scene.pinWorker(null);
+      select(null);
+    }
   }
   if (e.key === 'g' && !typing && scene.layout !== 'decks') setGroup(scene.group === 'worker' ? 'atespace' : 'worker');
   if (e.key === '/' && !typing) {
@@ -556,8 +602,9 @@ function signalLine(div, item) {
   const where = name && !item.title.includes(name) ? `<b>${esc(name)}</b>: ` : '';
   const link = item.link ? ` <a class="ext" href="${esc(item.link)}" target="_blank" rel="noopener" title="Open in a new tab">↗</a>` : '';
   const t = item.time || new Date().toISOString();
+  const thread = item.thread ? '<span class="thread-tag" title="Open the Slack thread">thread ›</span>' : '';
   div.innerHTML = `<span class="icon" title="${esc(SIGNAL_LABEL[item.sig] || item.sig)}">${SIGNAL_ICON[item.sig] || '•'}</span>
-    <span class="body"><span class="txt">${where}${item.text}${link}</span><span class="ts">${item.actor ? `<span class="who">${esc(item.actor)}</span> · ` : ''}<span data-ago="${esc(t)}" title="${esc(new Date(t).toLocaleString())}">${esc(ago(t))}</span></span></span>`;
+    <span class="body"><span class="txt">${where}${item.text}${link}</span><span class="ts">${item.actor ? `<span class="who">${esc(item.actor)}</span> · ` : ''}<span data-ago="${esc(t)}" title="${esc(new Date(t).toLocaleString())}">${esc(ago(t))}</span>${thread}</span></span>`;
   paintSignal(div.querySelector('.icon'), item.sig);
   div.querySelector('a.ext')?.addEventListener('click', (e) => e.stopPropagation());
 }
@@ -574,7 +621,15 @@ function feed(item) {
     div.innerHTML = `<span class="icon"${color ? ` style="--c:${color};--ci:${inkOn(color)}"` : ''}>${FEED_ICON[type]}</span>
       <span class="body"><span class="txt">${item.text}</span><span class="ts" title="${esc(now.toLocaleString())}">${clock(now.toISOString())}</span></span>`;
   }
-  if (item.key) {
+  if (item.thread) {
+    // A line in an incident's thread opens the thread (and flies to the workload).
+    div.classList.add('link');
+    div.title = item.key ? 'Open the Slack thread and fly to this workload' : 'Open the Slack thread';
+    div.addEventListener('click', () => {
+      if (item.key && model.agents.has(item.key)) select(item.key, true);
+      openThread(item.thread);
+    });
+  } else if (item.key) {
     div.classList.add('link');
     div.title = 'Select and fly to this workload';
     div.addEventListener('click', () => model.agents.has(item.key) && select(item.key, true));
@@ -700,4 +755,4 @@ $('#tour-btn').addEventListener('click', () => tour.toggle({ loop: params.get('l
 if (params.get('demo') === 'controls') tour.startWhenReady({ loop: params.get('loop') !== '0' });
 
 // For debugging and screenshots.
-window.scope = { model, scene, panel, select, stateClass, eventCounts, themes, looks, stream, perf, tour };
+window.scope = { model, scene, panel, select, stateClass, eventCounts, themes, looks, stream, perf, tour, drawer, openThread, closeThread, signalEvents };

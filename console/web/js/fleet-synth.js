@@ -67,6 +67,69 @@ export function slackLink(ts, thread) {
   return thread && thread !== ts ? `${p}?thread_ts=${thread}&cid=C0CEZ07K39N` : p;
 }
 
+/** Who posts the Slack messages (the backend's actor for the bot), and who presses the buttons. */
+const BOT = 'kube-agents';
+const ONCALL = 'sre-oncall';
+const CONSOLE_GKE = 'https://console.cloud.google.com/kubernetes/workload/overview?project=kcna-2026-demos';
+// Slack escapes & in message text as &amp;.
+const CONSOLE_LOGS = 'https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22&amp;project=kcna-2026-demos';
+const FENCE = '```';
+
+/** UTC "18:03" for a report's "State at". */
+function utcClock(ms = Date.now()) {
+  return new Date(ms).toISOString().slice(11, 16);
+}
+
+function evidenceTime() {
+  return new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+}
+
+/** The Cluster Agent's report for an OOMKilled workload, in Slack mrkdwn (as the real one is written). */
+export function oomReport({ name, ns, pod, limit, raised }) {
+  const now = evidenceTime();
+  return [
+    "*What's wrong*",
+    `State at ${utcClock()} UTC: The ${name} pod ${ns}/${pod} is in CrashLoopBackOff: its server container is OOM-killed (exit code 137) on every start.`,
+    '*Why*',
+    `• Memory peaks at ${limit} against a ${limit} limit before each restart; the image has not changed since Tuesday.`,
+    '• Traffic from `loadgenerator` is up 3x, so the working set grew past the limit.',
+    '*What to do*',
+    `• *Option A (Scale to 2 replicas):* Spread the load over two pods at the current ${limit} limit.`,
+    `• *Option B (Increase to ${raised} with headroom):* Raise the ${name} memory requests and limits to ${raised}.`,
+    `• :white_check_mark: *Recommended: Option B* — doubling the limit gives headroom for the traffic spike; a second replica at ${limit} would still OOM at peak.`,
+    "• *To authorize:* reply *'apply'* to open a GitOps Pull Request with the recommended fix, or name one directly with *'apply Option A'* / *'apply Option B'*.",
+    `:link: <${CONSOLE_GKE}|GKE Workloads> | <${CONSOLE_LOGS}|Cloud Logs>`,
+    '*Evidence for verified claims*',
+    `The pod ${pod} is in CrashLoopBackOff state. (exit 0, ${now})`,
+    `${FENCE}$ kubectl get pod ${pod} -n ${ns}\nNAME${' '.repeat(pod.length - 1)}READY   STATUS             RESTARTS\n${pod}   0/1     CrashLoopBackOff   4${FENCE}`,
+    `The container server was terminated because it was OOMKilled with exit code 137. (exit 0, ${now})`,
+    `${FENCE}$ kubectl get pod ${pod} -n ${ns} -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}'\nOOMKilled${FENCE}`,
+    `The last healthy pod used memory right up to the limit. (exit 0, ${now})`,
+    `${FENCE}$ kubectl top pod -n ${ns} -l app=${name}\n${name}-556b7d9948-l72m2   12m   ${limit}${FENCE}`,
+  ].join('\n');
+}
+
+/** The report for a bad image tag. */
+export function imageReport({ name, ns, pod, badImage, good }) {
+  const now = evidenceTime();
+  return [
+    "*What's wrong*",
+    `State at ${utcClock()} UTC: The ${name} pod ${ns}/${pod} is in ImagePullBackOff: the image \`${badImage}\` does not exist.`,
+    '*Why*',
+    '• The image tag changed 4 minutes ago in the fleet repo (commit `9f2c1ab`); the registry answers `manifest unknown` for it.',
+    '*What to do*',
+    '• *Option A (Revert to the last good tag):* Revert the image to the tag that was running before commit `9f2c1ab`.',
+    '• *Option B (Pin the image digest):* Pin the last good image by its digest so a moved tag cannot break it again.',
+    '• :white_check_mark: *Recommended: Option A* — the revert is the smallest change that restores the last known-good state.',
+    "• *To authorize:* reply *'apply'* to open a GitOps Pull Request with the recommended fix, or name one directly with *'apply Option A'* / *'apply Option B'*.",
+    `:link: <${CONSOLE_GKE}|GKE Workloads> | <${CONSOLE_LOGS}|Cloud Logs>`,
+    '*Evidence for verified claims*',
+    `The pod cannot pull its image. (exit 0, ${now})`,
+    `${FENCE}$ kubectl get pod ${pod} -n ${ns} -o jsonpath='{.status.containerStatuses[0].state.waiting.message}'\nBack-off pulling image "${badImage}"${FENCE}`,
+    `The last good image: \`${good}\``,
+  ].join('\n');
+}
+
 function slackTs(ms) {
   return `${Math.floor(ms / 1000)}.${String(ms % 1000).padStart(3, '0')}100`;
 }
@@ -219,35 +282,81 @@ export class FleetSynthStream {
     const a = this.agents.get(key);
     if (!a || this.incident) return;
     const [cluster, name] = key.split('/');
-    const agent = clusterAgent(cluster);
+    const ns = FLEET[cluster]?.namespace || 'default';
     const oom = reason === 'OOMKilled';
-    const thread = slackTs(Date.now() + 2000);
-    const reply = (s) => slackLink(slackTs(Date.now() + s * 1000 + 7), thread);
     const pr = this.pr++;
     const prLink = `${REPO}/pull/${pr}`;
     const limit = a.memoryLimit || '256Mi';
     const raised = `${Math.round((parseInt(limit, 10) * 2) / 50) * 50}Mi`;
+    const badImage = a.image.replace(/:[^:]+$/, ':v0.0.0-broken');
+    const pod = `${name}-659fd87c86-c7xjn`;
     this.incident = key;
+    // Slack messages: the alert's ts is the thread; every message has its
+    // own ts and permalink, as the backend's Slack poller sends them.
+    let thread = '';
+    const say = (type, title, text, extra = {}) => {
+      const ts = slackTs(Date.now());
+      if (type === 'alert') thread = ts;
+      const permalink = slackLink(ts, thread);
+      this.signal(type, key, title, { actor: BOT, thread, ts, text, permalink, link: permalink, ...extra });
+      return { ts, permalink };
+    };
+    const card = (mark, step) => `${name} ${oom ? 'crashloop' : 'image pull failure'} in ${cluster} ${mark} ${step}`;
+    const options = oom
+      ? [
+          { letter: 'A', label: 'Scale to 2 replicas' },
+          { letter: 'B', label: `Increase to ${raised} with headroom`, recommended: true },
+        ]
+      : [
+          { letter: 'A', label: 'Revert to the last good tag', recommended: true },
+          { letter: 'B', label: 'Pin the image digest' },
+        ];
+    const pick = options.find((o) => o.recommended);
+    let report = null;
     const steps = [
       [0, () => this.setWorkload(key, {
         state: 'CRASHED',
         ready: 0,
         reason,
-        crash: { message: oom ? `container ${name} was OOMKilled (limit ${limit}); 4 restarts in 3m` : `Back-off pulling image "${a.image.replace(/:[^:]+$/, ':v0.0.0-broken')}"`, time: new Date().toISOString() },
-        ...(oom ? {} : { image: a.image.replace(/:[^:]+$/, ':v0.0.0-broken') }),
+        crash: { message: oom ? `container ${name} was OOMKilled (limit ${limit}); 4 restarts in 3m` : `Back-off pulling image "${badImage}"`, time: new Date().toISOString() },
+        ...(oom ? {} : { image: badImage }),
       })],
-      [3, () => this.signal('alert', key, `${cluster}/${name}: ${reason}, ${oom ? '4 restarts in 3 minutes' : 'pods cannot pull their image'}`, { actor: 'event-watcher', thread, link: slackLink(thread) })],
-      [6, () => this.signal('triage', key, `Looking at ${name}: pod events, container status and the last hour of logs`, { actor: agent, thread, link: reply(6) })],
-      [10, () => this.signal('triage', key, oom ? `Memory peaked at ${limit} against a ${limit} limit before every restart` : 'The tag v0.0.0-broken does not exist in the registry', { actor: agent, thread, link: reply(10) })],
-      [14, () => this.signal('triage', key, oom ? 'No image change since Tuesday; traffic from loadgenerator is up 3x' : 'The image changed 4 minutes ago in the fleet repo (commit 9f2c1ab)', { actor: agent, thread, link: reply(14) })],
-      [19, () => this.signal('triage_report', key, oom ? `Root cause: memory limit too low under load. Options: 1) raise the limit to ${raised}  2) roll back  3) add a replica` : 'Root cause: bad image tag. Options: 1) revert to the last good tag  2) pin the digest', { actor: agent, thread, link: reply(19) })],
-      [25, () => this.signal('fix_chosen', key, oom ? `Option 1: raise ${name} to ${raised}` : 'Option 1: revert to the last good tag', { actor: 'sre-oncall', thread, link: reply(25) })],
-      [29, () => this.signal('pr_opened', key, `PR #${pr}: ${cluster}: ${oom ? `raise ${name} memory to ${raised}` : `revert ${name} image`}`, { actor: 'platform-agent', thread, link: prLink })],
-      [37, () => this.signal('pr_merged', key, `PR #${pr} merged; Config Sync is applying it to ${cluster}`, { actor: 'sre-oncall', thread, link: prLink })],
+      [3, () => say('alert', `${cluster}/${name}: ${reason}, ${oom ? '4 restarts in 3 minutes' : 'pods cannot pull their image'}`,
+        oom
+          ? `:rotating_light: *${name} in ${cluster} keeps crashing.* Looking now.\n\`${ns}/Pod/${pod}\` was OOMKilled 4 times in 3 minutes (limit \`${limit}\`).`
+          : `:rotating_light: *${name} in ${cluster} cannot pull its image.* Looking now.\n\`${ns}/Pod/${pod}\`: Back-off pulling image \`${badImage}\`.`)],
+      [6, () => say('triage', `Looking at ${name}: pod events, container status and the last hour of logs`, card('◌', `Triage ${ns}/Pod/${pod} (${oom ? 'BackOff' : 'ImagePullBackOff'}) on ${cluster}`))],
+      [10, () => say('triage', oom ? `Memory peaked at ${limit} against a ${limit} limit before every restart` : 'The tag v0.0.0-broken does not exist in the registry',
+        card('◌', oom ? `Memory peaked at *${limit}* against a \`${limit}\` limit before every restart (exit code 137).` : 'The tag `v0.0.0-broken` does not exist in the registry: `manifest unknown`.'))],
+      [14, () => say('triage', oom ? 'No image change since Tuesday; traffic from loadgenerator is up 3x' : 'The image changed 4 minutes ago in the fleet repo (commit 9f2c1ab)',
+        card('✓', oom ? 'No image change since Tuesday; traffic from `loadgenerator` is up 3x.' : 'The image changed 4 minutes ago in the fleet repo (commit `9f2c1ab`).'))],
+      [19, () => {
+        const text = oom ? oomReport({ name, ns, pod, limit, raised }) : imageReport({ name, ns, pod, badImage, good: a.image });
+        const title = oom ? `${name} is OOM-killed on every start: its ${limit} limit is too low under 3x traffic` : `${name} cannot start: the image tag v0.0.0-broken does not exist`;
+        report = { text, ...say('triage_report', title, text, { options, message: options.map((o) => `${o.letter}: ${o.label}`).join('\n') }) };
+      }],
+      // Pressing a report's option button edits the report: the backend
+      // re-emits the report's ts as fix_chosen, actor the person who pressed.
+      [25, () => this.signal('fix_chosen', key, `Option ${pick.letter}: ${pick.label}`, {
+        actor: ONCALL,
+        thread,
+        ts: report?.ts,
+        text: `${report?.text || ''}\n✓ ${ONCALL}: ${pick.label}`,
+        permalink: report?.permalink,
+        link: report?.permalink,
+      })],
+      [27, () => say('triage', `Apply Option ${pick.letter}: ${pick.label}`, `Apply Option ${pick.letter}: ${pick.label} ◌ Opening a GitOps pull request in \`gke-demos/kcna26-fleet-gitops\``)],
+      [29, () => this.signal('pr_opened', key, `PR #${pr}: ${cluster}: ${oom ? `raise ${name} memory to ${raised}` : `revert ${name} image`}`, { actor: 'kube-agents[bot]', link: prLink })],
+      [31, () => say('triage', 'Fix PR opened',
+        `I opened PR #${pr} in kcna26-fleet-gitops. It's yours to review. ${oom ? `chore(${ns}): increase ${name} memory requests and limits to ${raised}` : `fix(${ns}): revert ${name} to its last good image`} <${prLink}|Pull Request #${pr}>`,
+        { link: prLink })],
+      [37, () => this.signal('pr_merged', key, `PR #${pr} merged; Config Sync is applying it to ${cluster}`, { actor: ONCALL, link: prLink })],
       [41, () => this.setWorkload(key, { state: 'RESUMING', reason: 'Progressing', crash: undefined, ...(oom ? { memoryLimit: raised } : { image: FLEET[cluster].image(name) }) })],
       [46, () => {
-        this.setWorkload(key, { state: 'RUNNING', ready: this.agents.get(key).replicas, reason: '' });
-        this.signal('chat', key, `${name} is healthy again; closing the incident`, { actor: agent, thread, link: reply(46) });
+        const n = this.agents.get(key).replicas;
+        this.setWorkload(key, { state: 'RUNNING', ready: n, reason: '' });
+        say('chat', `${name} is healthy again; closing the incident`,
+          `:white_check_mark: *${name} is healthy again.* ${n}/${n} ready ${oom ? `on the new ${raised} limit` : 'on the last good image'}, no restarts for 5 minutes. Closing the incident.`);
         this.incident = null;
       }],
     ];

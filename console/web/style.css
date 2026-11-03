@@ -2448,3 +2448,600 @@ body.panel-open .controls {
   color: var(--running);
   font-weight: 800;
 }
+
+/* ---- the thread view: an incident's Slack thread in the side panel's slot */
+
+.drawer {
+  position: fixed;
+  top: 70px;
+  right: 12px;
+  bottom: 34px;
+  width: 520px;
+  max-width: calc(100vw - 24px);
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-strong);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  transform: translateX(560px);
+  visibility: hidden;
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s linear 0.28s;
+  z-index: 8;
+}
+
+.drawer.open {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* The drawer replaces the workload panel while it is open. */
+body.drawer-open .panel {
+  transform: translateX(460px);
+}
+
+/* The zoom buttons and the control panel move left of it, clear of the options. */
+body.drawer-open #zoomctl {
+  right: 544px;
+}
+
+body.drawer-open .controls {
+  right: 602px;
+}
+
+.drawer-head {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawer-top .back {
+  margin-left: 0;
+  font-size: 13px;
+}
+
+.drawer-kind {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.drawer .close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.drawer .close:hover {
+  color: var(--text);
+}
+
+.drawer-where {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.drawer-where b {
+  color: var(--text);
+}
+
+.drawer-where .slash {
+  opacity: 0.6;
+}
+
+.drawer-head h2 {
+  margin: 2px 0 8px;
+  font-size: 19px;
+  line-height: 1.3;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.drawer-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status-chip {
+  --c: var(--transition);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 10px 3px 8px;
+  border-radius: 6px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+  border: 1px solid var(--c);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.status-chip::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+.status-chip[data-status="investigating"] {
+  --c: var(--crashed);
+}
+
+.status-chip[data-status="investigating"]::before {
+  animation: chip-pulse 1.4s ease-in-out infinite;
+}
+
+.status-chip[data-status="pr"],
+.status-chip[data-status="closed"] {
+  --c: var(--ev-added);
+}
+
+.status-chip[data-status="merged"],
+.status-chip[data-status="recovered"] {
+  --c: var(--running);
+}
+
+@keyframes chip-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+a.slack-open {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+a.slack-open:hover {
+  text-decoration: underline;
+}
+
+.drawer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 14px 18px;
+}
+
+.msgs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.msgs .fresh {
+  animation: feedin 0.35s ease-out;
+}
+
+.msg {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 6px 8px;
+  border-radius: 10px;
+}
+
+.msg:hover {
+  background: var(--chip-bg);
+}
+
+.avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--ev-meta);
+}
+
+.avatar.bot {
+  background: var(--logo);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.avatar.bot::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 2.5px solid rgba(255, 255, 255, 0.92);
+}
+
+.bubble {
+  flex: 1;
+  min-width: 0;
+}
+
+.msg-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-bottom: 3px;
+}
+
+.msg-head .author {
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.msg-head .app-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: var(--muted);
+  background: var(--chip-bg);
+  border: 1px solid var(--line);
+}
+
+.msg-head .via {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.msg-head .when,
+.sys-time .when {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.msg-head .abs,
+.sys-time .abs {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.msg-head .ext {
+  margin-left: auto;
+}
+
+.msg.bot .msg-head .author {
+  color: var(--accent);
+}
+
+.msg-text {
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.msg-text a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.msg-text code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+}
+
+.msg-text pre {
+  margin: 6px 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.msg-text pre code {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 13.5px;
+  line-height: 1.45;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.msg.sig-alert .bubble {
+  border-left: 3px solid var(--crashed);
+  padding-left: 10px;
+}
+
+/* A report's evidence, folded. */
+.msg-text details.evidence {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--chip-bg);
+}
+
+.msg-text details.evidence summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.msg-text details.evidence[open] summary {
+  margin-bottom: 6px;
+}
+
+.msg-text details.evidence summary .muted {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* A report's options: big buttons that open the report in Slack. */
+.opts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+a.opt:hover {
+  background: var(--btn-hover);
+}
+
+.opt-letter {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: var(--btn-text);
+  border: 1px solid var(--btn-border);
+}
+
+.opt-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.opt-tags {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.opt-badge,
+.opt-chosen {
+  flex: none;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.opt-badge {
+  color: var(--primary-text);
+  background: var(--primary-bg);
+}
+
+.opt.rec {
+  border-width: 2px;
+  border-color: var(--primary-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-bg) 22%, transparent);
+}
+
+.opt.rec .opt-letter {
+  background: var(--primary-bg);
+  border-color: var(--primary-border);
+  color: var(--primary-text);
+}
+
+/* Once a fix is chosen the recommendation's highlight goes; the chosen one is marked. */
+.opts.decided .opt {
+  border-width: 1px;
+  border-color: var(--line);
+  background: var(--chip-bg);
+  box-shadow: none;
+  color: var(--muted);
+}
+
+.opts.decided .opt .opt-letter {
+  background: none;
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.opts.decided .opt-badge {
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+}
+
+.opts.decided .opt.chosen {
+  color: var(--text);
+  border: 2px solid var(--running);
+  background: color-mix(in srgb, var(--running) 14%, transparent);
+}
+
+.opts.decided .opt.chosen .opt-letter {
+  background: var(--running);
+  border-color: var(--running);
+  color: var(--running-ink);
+}
+
+.opt-chosen {
+  color: var(--running-ink);
+  background: var(--running);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12.5px;
+}
+
+.opt-hint {
+  margin: 8px 2px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* System rows: a chosen fix and the workload's pull requests. */
+.sys {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 4px 48px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--line);
+  font-size: 14px;
+  --c: var(--transition);
+  --ci: var(--transition-ink);
+}
+
+.sys.pr_opened {
+  --c: var(--ev-added);
+  --ci: var(--ev-added-ink);
+}
+
+.sys.pr_merged {
+  --c: var(--running);
+  --ci: var(--running-ink);
+}
+
+.sys.pr_closed {
+  --c: var(--ev-removed);
+  --ci: var(--ev-removed-ink);
+}
+
+.sys-icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--c);
+  color: var(--ci);
+}
+
+.sys-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sys-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.sys-time {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+a.pr-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+a.pr-link:hover {
+  text-decoration: underline;
+}
+
+.drawer-new {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--primary-border);
+  background: var(--primary-bg);
+  color: var(--primary-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+/* The feed's "thread ›" on lines that belong to an incident's thread. */
+.feed-list .thread-tag {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.feed-list .item.link:hover .thread-tag {
+  background: var(--chip-hover);
+}
+
+.panel .view-thread {
+  margin-bottom: 10px;
+  font-size: 13px;
+}

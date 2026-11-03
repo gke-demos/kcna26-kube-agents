@@ -41,7 +41,8 @@ function mono(s) {
 export class Panel {
   /**
    * @param {HTMLElement} el
-   * @param {{onClose: Function, onShowWorker?: Function, agent: (key: string) => any, worker: (name: string) => any, signals: (key: string) => any[]}} opts
+   * @param {{onClose: Function, onShowWorker?: Function, agent: (key: string) => any, worker: (name: string) => any, signals: (key: string) => any[],
+   *   threadFor?: (key: string) => string, onThread?: (thread: string) => void}} opts
    */
   constructor(el, opts) {
     this.el = el;
@@ -92,7 +93,9 @@ export class Panel {
   signalsHTML() {
     const list = (this.opts.signals(this.key) || []).slice(0, PANEL_SIGNALS);
     if (!list.length) return '<p class="muted">No alerts, triage or pull requests for this workload yet.</p>';
-    return `<ol class="sig-list">${list
+    const thread = this.opts.threadFor?.(this.key);
+    const view = thread && this.opts.onThread ? `<button class="btn view-thread" data-act="thread" data-thread="${esc(thread)}" title="The incident's Slack thread: the agent's report, its options and the pull requests">View thread ›</button>` : '';
+    return `${view}<ol class="sig-list">${list
       .map((s) => {
         const icon = SIGNAL_ICON[s.sig] || '•';
         const link = s.link ? ` <a class="ext" href="${esc(s.link)}" target="_blank" rel="noopener" title="Open in a new tab">↗</a>` : '';
@@ -144,5 +147,6 @@ export class Panel {
     if (!btn) return;
     if (btn.dataset.act === 'close') this.opts.onClose();
     else if (btn.dataset.act === 'show-worker') this.opts.onShowWorker?.(btn.dataset.worker);
+    else if (btn.dataset.act === 'thread') this.opts.onThread?.(btn.dataset.thread);
   }
 }
