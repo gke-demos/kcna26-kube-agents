@@ -5,10 +5,10 @@ Friday are for re-runs and recording. Strike items through as they close.
 
 ## Gari
 
-- [ ] Create the console's GitHub fine-grained PAT: repository `gke-demos/kcna26-fleet-gitops`
+- [x] ~~Create the console's GitHub fine-grained PAT: repository `gke-demos/kcna26-fleet-gitops`
       only; Contents read/write, Pull requests read/write, Issues read, Metadata read. Save it as
       `~/.kcna26/github-pat`.
-- [ ] Create the console's IAP OAuth client: Google Auth Platform in kcna-2026-demos, audience
+- [x] ~~Create the console's IAP OAuth client: Google Auth Platform in kcna-2026-demos, audience
       External (so gke.ninja accounts can sign in), Clients → Web application, redirect URI
       `https://iap.googleapis.com/v1/oauth/clientIds/<CLIENT_ID>:handleRedirect` (add it once the
       ID exists). Save the ID and secret as `~/.kcna26/oauth-client-id` and
@@ -26,6 +26,9 @@ Friday are for re-runs and recording. Strike items through as they close.
 - [ ] Say when Claude may clear `#platform-ops`. (Deploying the console raises drift alerts: clear after
       the last deploy.)
 
+- [ ] Publish the console's OAuth app (Google Auth Platform → Audience → Publish app) so google.com
+      and event.goog accounts can sign in; decide whether the demo accounts may press the buttons.
+
 ## Claude
 
 - [ ] Run the compliance and obtainability audits; check they open fix PRs for the
@@ -33,9 +36,9 @@ Friday are for re-runs and recording. Strike items through as they close.
 - [ ] Clear `#platform-ops` (`tools/clear_channel.py --keep audit`) and keep the agent board idle.
 - [ ] Re-run the audits the night before each show day.
 - [ ] Booth video from the backup clips (record-demo-video skill).
-- [x] ~~The 3D console~~: built, running in `fleet-scope` on the hub (`scripts/console.sh deploy --dev`,
-      port-forward only). Waiting on the PAT (buttons, PR events) and the OAuth client (the public
-      Gateway: `scripts/console.sh deploy` then `scripts/console.sh gateway`).
+- [x] ~~The 3D console~~: live at https://kcna26.demo.gke.ninja behind IAP (google.com, the six
+      event.goog demo accounts, garisingh@gke.ninja). Buttons: garisingh@google.com and
+      garisingh@gke.ninja only (`SCOPE_WRITERS` in `console/deploy/fleet-scope.yaml`).
 - [ ] File the upstream kube-agents issues below once Gari agrees.
 
 ## Fixed on the way
