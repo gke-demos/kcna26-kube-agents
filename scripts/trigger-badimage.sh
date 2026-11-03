@@ -15,6 +15,9 @@ readonly DEFAULT_TARGET="frontend"
 readonly UPSTREAM_TAG="v0.10.7"
 # Looks like a plausible next patch; the registry has no such tag.
 readonly MISSING_TAG="v0.10.70"
+# The tag must end at UPSTREAM_TAG, so v0.10.7 does not also match v0.10.70
+# (a second press would otherwise push v0.10.700).
+readonly TAG_END="([^[:alnum:]._-]|$)"
 
 target="${1:-$DEFAULT_TARGET}"
 case "$target" in
@@ -25,8 +28,8 @@ file="$BOUTIQUE_DIR/$target.yaml"
 
 dir="$(clone_fleet)"
 trap 'rm -rf "$dir"' EXIT
-grep -q "/$target:$UPSTREAM_TAG" "$dir/$file" || die "$file is not at $UPSTREAM_TAG; run reset.sh first"
-sed -i "s|/$target:$UPSTREAM_TAG|/$target:$MISSING_TAG|" "$dir/$file"
+grep -qE "/$target:${UPSTREAM_TAG//./\\.}$TAG_END" "$dir/$file" || die "$file is not at $UPSTREAM_TAG; run reset.sh first"
+sed -i -E "s#/$target:${UPSTREAM_TAG//./\\.}$TAG_END#/$target:$MISSING_TAG\\1#" "$dir/$file"
 git -C "$dir" add "$file"
 sha="$(commit_and_push "$dir" "chore($target): roll out $MISSING_TAG")"
 
