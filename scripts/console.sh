@@ -32,12 +32,18 @@ die() {
 }
 tag_default() { git -C "$CONSOLE_DIR" rev-parse --short HEAD; }
 
-# Create or update a generic Secret with one key from a file.
+# Create or update a generic Secret with one key from a file, whitespace
+# stripped: an editor's trailing newline in an OAuth client secret makes IAP
+# reject it.
 secret_from_file() {
-  local name="$1" key="$2" file="$3"
+  local name="$1" key="$2" file="$3" tmp
   [[ -s "$file" ]] || die "missing $file"
+  tmp="$(mktemp)"
+  chmod 600 "$tmp"
+  tr -d '[:space:]' <"$file" >"$tmp"
   kubectl --context "$CONTEXT" -n "$NAMESPACE" create secret generic "$name" \
-    --from-file="$key=$file" --dry-run=client -o yaml | k apply -f -
+    --from-file="$key=$tmp" --dry-run=client -o yaml | k apply -f -
+  rm -f "$tmp"
 }
 
 case "${1:-}" in
@@ -79,7 +85,8 @@ case "${1:-}" in
     if k get deploy fleet-scope -o jsonpath='{.spec.template.spec.containers[0].args}' | grep -q -- "$DEV_FLAG"; then
       die "fleet-scope runs with $DEV_FLAG; run 'console.sh deploy' (without --dev) first"
     fi
-    client_id="$(<"$CRED_DIR/oauth-client-id")" || die "missing $CRED_DIR/oauth-client-id"
+    [[ -s "$CRED_DIR/oauth-client-id" ]] || die "missing $CRED_DIR/oauth-client-id"
+    client_id="$(tr -d '[:space:]' <"$CRED_DIR/oauth-client-id")"
     secret_from_file fleet-scope-oauth client_secret "$CRED_DIR/oauth-client-secret"
     sed "s|OAUTH_CLIENT_ID|$client_id|" "$CONSOLE_DIR/deploy/gateway.yaml" |
       kubectl --context "$CONTEXT" apply -f -
