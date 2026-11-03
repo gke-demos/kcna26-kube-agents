@@ -17,6 +17,7 @@ Live incidents are commits to the fleet repo, the way a real bad change arrives:
 squeezes a service's memory, `trigger-badimage.sh` rolls out a tag that does not exist.
 
 - [`RUNBOOK.md`](RUNBOOK.md): build, pre-talk checklist, talk script, booth guide.
+- [`FOLLOWUPS.md`](FOLLOWUPS.md): open work before the show, by owner.
 - [`prompts.md`](prompts.md): the vetted chat prompts and their measured times.
 - [`slides/`](slides/): the architecture and roadmap diagrams.
 - `terraform/`: the two workload clusters and Config Sync.
