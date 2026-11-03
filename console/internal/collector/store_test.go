@@ -139,3 +139,29 @@ func TestStoreDropsLaggingSubscriber(t *testing.T) {
 	}
 	sub.Cancel() // safe after the store dropped it
 }
+
+func TestLocate(t *testing.T) {
+	s := NewStore(Options{})
+	s.Update(Update{
+		Atespaces: []model.Atespace{{Name: "boutique-prod"}, {Name: "bank-prod"}},
+		Actors: map[string][]model.Agent{
+			"boutique-prod": {{Atespace: "boutique-prod", Name: "frontend", Namespace: "online-boutique"}},
+			"bank-prod": {
+				{Atespace: "bank-prod", Name: "frontend", Namespace: "bank-of-anthos"},
+				{Atespace: "bank-prod", Name: "shared", Namespace: "x"},
+			},
+		},
+	})
+	if c, ok := s.Locate("online-boutique", "frontend"); !ok || c != "boutique-prod" {
+		t.Errorf("online-boutique/frontend: %q %v", c, ok)
+	}
+	if _, ok := s.Locate("nowhere", "frontend"); ok {
+		t.Error("unknown namespace located")
+	}
+	s.Update(Update{Actors: map[string][]model.Agent{
+		"boutique-prod": {{Atespace: "boutique-prod", Name: "shared", Namespace: "x"}},
+	}})
+	if _, ok := s.Locate("x", "shared"); ok {
+		t.Error("ambiguous workload located")
+	}
+}

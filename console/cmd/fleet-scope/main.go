@@ -123,7 +123,7 @@ func main() {
 		slog.Warn("no GitHub token: no PR signals, no buttons")
 	}
 	if tok := readSecret(*slackToken); tok != "" {
-		sl := signals.NewSlack(signals.SlackOptions{Token: tok, Channel: *channel})
+		sl := signals.NewSlack(signals.SlackOptions{Token: tok, Channel: *channel, Locate: store.Locate})
 		run("slack", func(ctx context.Context) error { return sl.Run(ctx, store, resolve) })
 	} else {
 		slog.Warn("no Slack token: no alert or triage signals")

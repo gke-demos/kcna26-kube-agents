@@ -138,6 +138,23 @@ func (s *Store) Agent(atespace, name string) (model.Agent, bool) {
 	return *a, true
 }
 
+// Locate returns the cluster (atespace) of the one drawn workload with this
+// namespace and name; ok is false when there is none or more than one.
+func (s *Store) Locate(namespace, name string) (string, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	found := ""
+	for _, a := range s.world.Agents {
+		if a.Namespace == namespace && a.Name == name {
+			if found != "" && found != a.Atespace {
+				return "", false
+			}
+			found = a.Atespace
+		}
+	}
+	return found, found != ""
+}
+
 // Seq returns the sequence number of the last event.
 func (s *Store) Seq() uint64 {
 	s.mu.Lock()

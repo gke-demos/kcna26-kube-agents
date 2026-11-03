@@ -62,6 +62,11 @@ type SlackOptions struct {
 	Channel string
 	// Interval between polls (default 5s).
 	Interval time.Duration
+	// Locate finds the cluster of a drawn workload by namespace and name,
+	// for alerts that name no cluster (warning-level alerts name only
+	// "namespace/workload"). Nil leaves such alerts without a key until the
+	// thread names the cluster.
+	Locate func(namespace, name string) (cluster string, ok bool)
 }
 
 // NewSlack returns a poller.

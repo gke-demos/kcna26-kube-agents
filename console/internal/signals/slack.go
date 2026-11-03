@@ -31,6 +31,8 @@ import (
 )
 
 const (
+	// errThreadNotFound is Slack's error for replies of a deleted message.
+	errThreadNotFound    = "thread_not_found"
 	defaultSlackInterval = 5 * time.Second
 	defaultSlackAPI      = "https://slack.com/api/"
 	// slackLookback is the history loaded on start.
@@ -187,6 +189,9 @@ func (s *Slack) poll(ctx context.Context, e Emitter, r Resolver) error {
 			continue
 		}
 		got, err := s.refresh(ctx, p, r)
+		if s.forgetIfGone(p.TS, err) {
+			continue
+		}
 		if err != nil {
 			s.flush(e, evs, r)
 			return err
@@ -196,7 +201,7 @@ func (s *Slack) poll(ctx context.Context, e Emitter, r Resolver) error {
 	}
 	if ts := s.nextRoundRobin(active, done); ts != "" {
 		got, err := s.refresh(ctx, slackMessage{TS: ts}, r)
-		if err != nil {
+		if err != nil && !s.forgetIfGone(ts, err) {
 			s.flush(e, evs, r)
 			return err
 		}
@@ -204,6 +209,16 @@ func (s *Slack) poll(ctx context.Context, e Emitter, r Resolver) error {
 	}
 	s.flush(e, evs, r)
 	return nil
+}
+
+// forgetIfGone drops a thread whose parent message was deleted (Slack answers
+// thread_not_found), so one cleared thread doesn't fail every later poll.
+func (s *Slack) forgetIfGone(ts string, err error) bool {
+	if err == nil || !strings.Contains(err.Error(), errThreadNotFound) {
+		return false
+	}
+	delete(s.threads, ts)
+	return true
 }
 
 // flush fills in the cluster and key of events emitted before their thread
@@ -375,6 +390,14 @@ func (s *Slack) event(ctx context.Context, m slackMessage, th *thread, sig signa
 	name := th.name
 	if sig.Name != "" {
 		name = sig.Name
+	}
+	if ev.Cluster == "" && sig.Namespace != "" && name != "" && s.o.Locate != nil {
+		if c, ok := s.o.Locate(sig.Namespace, name); ok {
+			ev.Cluster = c
+			if th.cluster == "" {
+				th.cluster = c
+			}
+		}
 	}
 	ev.Key = resolveKey(r, ev.Cluster, name)
 	if ev.Link == "" {

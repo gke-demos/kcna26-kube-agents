@@ -188,9 +188,11 @@ type signal struct {
 	Type    string
 	Title   string
 	Message string
-	// Cluster and Name are what the message itself names.
-	Cluster string
-	Name    string
+	// Cluster, Namespace and Name are what the message itself names. A
+	// warning alert names "namespace/workload" but no cluster.
+	Cluster   string
+	Namespace string
+	Name      string
 	// Link overrides the message permalink (a PR URL).
 	Link string
 	// Actor overrides the message author (who pressed an option button).
@@ -261,7 +263,7 @@ func classifyTop(text string) signal {
 		}
 	}
 	if sm := objectRe.FindStringSubmatch(firstLine(text)); sm != nil {
-		s.Name = sm[2]
+		s.Namespace, s.Name = sm[1], sm[2]
 	}
 	return s
 }
