@@ -163,13 +163,19 @@ After the talk: `scripts/reset.sh`.
 
 ## 5. Booth
 
-- An attract loop plays on the big screen. The live station is a laptop with Slack and a terminal.
+- An attract loop (the narrated video) plays on the big screen. The live station is a laptop
+  signed in to https://kcna26.demo.gke.ninja with a demo account, plus Slack.
 - **Visitor flow:**
-  1. Run `scripts/break-something.sh`; it fires the next of 8 incidents across both clusters.
-  2. While the triage runs (about 5–10 minutes), walk the visitor through the audit card and
-     issue, or let them ask a prompt from the card (`prompts.md`).
-  3. When the options appear, the visitor clicks one, and you show the PR.
-  4. Don't merge; `scripts/reset.sh` closes it.
-- Run `scripts/reset.sh` between visitors, and `scripts/preflight.sh` at the start of each shift.
+  1. The visitor presses a "Break something" button in the console. **Prefer "Push a bad
+     image"**: it alerts in about 15 s; an OOM takes 5–6 minutes (the watcher's crash-loop
+     debounce). The tracker card follows every step.
+  2. The Cluster Agent reports in 1–2 minutes and opens its recommended fix as a PR by itself
+     (`scripts/tune-agent.sh`); open the thread drawer ("View thread ›") to show the diagnosis.
+  3. Merge the PR from its link in the feed and watch the workload heal (about 30 s), or leave it.
+  4. Press "Reset the demo" (closes the PR if unmerged, restores the baseline).
+- **Vary the workload between visitors.** A workload that breaks the same way again within
+  about 15 minutes is folded into its open incident: no new alert, no new triage. The target
+  pickers default to different services; rotate through them.
+- Run `scripts/preflight.sh` at the start of each shift.
 - **If Slack or the agent is down,** keep the attract loop on and say so; don't debug at the
   booth. Ping the on-call channel.
