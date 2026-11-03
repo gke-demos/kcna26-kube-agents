@@ -24,6 +24,12 @@ variable "console_host" {
   default = "kcna26.demo.gke.ninja"
 }
 
+variable "console_viewers" {
+  type        = list(string)
+  description = "IAP principals allowed to open the console (user:..., group:...). Who may press its buttons is the Deployment's SCOPE_WRITERS."
+  default     = ["user:garisingh@google.com", "user:garisingh@gke.ninja"]
+}
+
 provider "google" {
   alias   = "dns"
   project = var.dns_project
@@ -36,7 +42,18 @@ locals {
     "artifactregistry.googleapis.com",
     "certificatemanager.googleapis.com",
     "compute.googleapis.com",
+    "iap.googleapis.com",
   ]
+}
+
+# Project-wide, so it covers the backend service the Gateway creates (whose
+# name changes if the Gateway is re-created).
+resource "google_project_iam_member" "console_viewers" {
+  for_each   = toset(var.console_viewers)
+  project    = var.project_id
+  role       = "roles/iap.httpsResourceAccessor"
+  member     = each.value
+  depends_on = [google_project_service.console]
 }
 
 resource "google_project_service" "console" {

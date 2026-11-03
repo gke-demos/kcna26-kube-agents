@@ -1,0 +1,103 @@
+# fleet-scope on kube-agents-hub. scripts/console.sh deploy substitutes IMAGE
+# and creates the Secrets; the public Gateway is in gateway.yaml.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fleet-scope
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fleet-scope
+  namespace: fleet-scope
+  annotations:
+    # roles/container.viewer on the project, nothing else (terraform/console.tf).
+    iam.gke.io/gcp-service-account: fleet-scope@kcna-2026-demos.iam.gserviceaccount.com
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleet-scope
+  namespace: fleet-scope
+  labels:
+    app: fleet-scope
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fleet-scope
+  template:
+    metadata:
+      labels:
+        app: fleet-scope
+    spec:
+      serviceAccountName: fleet-scope
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: fleet-scope
+          image: IMAGE
+          args:
+            - --github-token-file=/secrets/github/token
+            - --slack-token-file=/secrets/slack/token
+          env:
+            - name: SCOPE_PROJECT
+              value: kcna-2026-demos
+            - name: SCOPE_PROJECT_NUMBER
+              value: "893733606120"
+            - name: SCOPE_WRITERS
+              value: garisingh@google.com,garisingh@gke.ninja
+            - name: SCOPE_LINKS
+              value: >-
+                Slack #platform-ops=https://kubeagentsdemo.slack.com/archives/C0CEZ07K39N,
+                Fleet repo=https://github.com/gke-demos/kcna26-fleet-gitops,
+                Online Boutique=http://35.253.85.127,
+                Bank of Anthos=http://34.30.225.161
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: github
+              mountPath: /secrets/github
+              readOnly: true
+            - name: slack
+              mountPath: /secrets/slack
+              readOnly: true
+      volumes:
+        - name: github
+          secret:
+            secretName: fleet-scope-github
+            optional: true
+        - name: slack
+          secret:
+            secretName: fleet-scope-slack
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleet-scope
+  namespace: fleet-scope
+spec:
+  selector:
+    app: fleet-scope
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
