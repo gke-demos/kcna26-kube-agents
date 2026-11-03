@@ -27,7 +27,7 @@ import (
 const DefaultSubscriberBuffer = 256
 
 // RecentSignals is how many signal events a snapshot carries.
-const RecentSignals = 60
+const RecentSignals = 200
 
 // Store holds the current picture and the subscribers watching it.
 type Store struct {
@@ -187,6 +187,9 @@ func (s *Store) Emit(evs ...model.Event) []model.Event {
 			s.recent = append(s.recent, ev)
 		}
 	}
+	// By event time, not arrival: each source loads its history on start,
+	// and the newest signals must survive the cap whichever loaded first.
+	sort.SliceStable(s.recent, func(i, j int) bool { return s.recent[i].Time.Before(s.recent[j].Time) })
 	if over := len(s.recent) - RecentSignals; over > 0 {
 		s.recent = append([]model.Event{}, s.recent[over:]...)
 	}
