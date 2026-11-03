@@ -159,7 +159,7 @@ try {
     await cap('The diagnosis: what is wrong, why, and the options<small>The recommended fix is highlighted; the evidence (the commands it ran) folds underneath</small>');
     await sleep(14000);
 
-    mark('pr', 4);
+    mark('pr', 8);
     await cap('It opens the recommended fix as a pull request<small>Nothing touches the cluster until a person merges (sped up)</small>');
     const pr = await waitFor(signal, since('pr_opened'), 8 * MIN, 3000);
     prNumber = (pr?.link || '').split('/').pop();
