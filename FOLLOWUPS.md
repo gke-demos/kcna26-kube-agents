@@ -27,7 +27,7 @@ Friday are for re-runs and recording. Strike items through as they close.
       the last deploy.)
 
 - [ ] Publish the console's OAuth app (Google Auth Platform → Audience → Publish app) so google.com
-      and event.goog accounts can sign in; decide whether the demo accounts may press the buttons.
+      and event.goog accounts can sign in.
 
 ## Claude
 
@@ -37,8 +37,8 @@ Friday are for re-runs and recording. Strike items through as they close.
 - [ ] Re-run the audits the night before each show day.
 - [ ] Booth video from the backup clips (record-demo-video skill).
 - [x] ~~The 3D console~~: live at https://kcna26.demo.gke.ninja behind IAP (google.com, the six
-      event.goog demo accounts, garisingh@gke.ninja). Buttons: garisingh@google.com and
-      garisingh@gke.ninja only (`SCOPE_WRITERS` in `console/deploy/fleet-scope.yaml`).
+      event.goog demo accounts, garisingh@gke.ninja). Buttons: garisingh@google.com,
+      garisingh@gke.ninja and the six demo accounts (`SCOPE_WRITERS` in `console/deploy/fleet-scope.yaml`).
 - [ ] File the upstream kube-agents issues below once Gari agrees.
 
 ## Fixed on the way
