@@ -356,14 +356,18 @@ func (s *Slack) event(ctx context.Context, m slackMessage, th *thread, sig signa
 		ts = sig.TS
 	}
 	ev := model.Event{
-		Type:    typ,
-		Time:    tsTime(ts),
-		Title:   sig.Title,
-		Message: sig.Message,
-		Link:    sig.Link,
-		Actor:   sig.Actor,
-		Thread:  th.ts,
-		Cluster: th.cluster,
+		Type:      typ,
+		Time:      tsTime(ts),
+		Title:     sig.Title,
+		Message:   sig.Message,
+		Link:      sig.Link,
+		Actor:     sig.Actor,
+		Thread:    th.ts,
+		Cluster:   th.cluster,
+		Text:      clip(m.Text, maxText),
+		TS:        m.TS,
+		Permalink: s.permalink(m.TS, th.ts),
+		Options:   sig.Options,
 	}
 	if sig.Cluster != "" {
 		ev.Cluster = sig.Cluster

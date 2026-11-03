@@ -199,6 +199,8 @@ type signal struct {
 	TS string
 	// FromEdit marks a signal read from an edit rather than the post.
 	FromEdit bool
+	// Options are a report's choice buttons.
+	Options []model.Option
 }
 
 // classify reads one message. reply says it is in a thread; bot says the
@@ -306,10 +308,16 @@ func classifyReport(m slackMessage) []signal {
 		}
 		lines = append(lines, r)
 	}
+	var options []model.Option
+	for _, o := range opts {
+		letter := strings.TrimPrefix(o.letter, optionPrefix)
+		options = append(options, model.Option{Letter: letter, Label: o.label, Recommended: letter == rec})
+	}
 	out := []signal{{
 		Type:    model.EventTriageReport,
 		Title:   clip(title, maxTitle),
 		Message: clip(strings.Join(lines, "\n"), maxMessage),
+		Options: options,
 	}}
 	if who, choice := chooser(m); who != "" {
 		t := choice

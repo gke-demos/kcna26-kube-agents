@@ -29,6 +29,8 @@ const (
 	// maxTitle and maxMessage bound Event.Title and Event.Message, in runes.
 	maxTitle   = 120
 	maxMessage = 600
+	// maxText bounds Event.Text, the full message for the thread view.
+	maxText = 12000
 	// httpTimeout bounds one API request.
 	httpTimeout = 20 * time.Second
 )

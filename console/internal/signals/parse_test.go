@@ -17,6 +17,7 @@ package signals
 import (
 	"encoding/json"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -261,6 +262,13 @@ func TestClassifyReportBeforeChoice(t *testing.T) {
 	want := "Option A: Revert to working 32Mi\nOption B: Increase to 64Mi with headroom\nRecommended: Option B (Increase to 64Mi with headroom)"
 	if got[0].Message != want {
 		t.Errorf("message %q", got[0].Message)
+	}
+	wantOpts := []model.Option{
+		{Letter: "A", Label: "Revert to working 32Mi"},
+		{Letter: "B", Label: "Increase to 64Mi with headroom", Recommended: true},
+	}
+	if !reflect.DeepEqual(got[0].Options, wantOpts) {
+		t.Errorf("options %+v", got[0].Options)
 	}
 }
 

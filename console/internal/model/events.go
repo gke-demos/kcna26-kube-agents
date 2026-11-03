@@ -105,4 +105,22 @@ type Event struct {
 	Link    string `json:"link,omitempty"`
 	Actor   string `json:"actor,omitempty"`
 	Thread  string `json:"thread,omitempty"`
+
+	// Slack signals also carry the message itself, for the console's thread
+	// view: Text is its full Slack mrkdwn (mentions expanded, Slack's &amp;
+	// &lt; &gt; escapes kept), TS its Slack timestamp, Permalink a link to
+	// the message (Link may point elsewhere, at a PR), and Options a report's
+	// choice buttons.
+	Text      string   `json:"text,omitempty"`
+	TS        string   `json:"ts,omitempty"`
+	Permalink string   `json:"permalink,omitempty"`
+	Options   []Option `json:"options,omitempty"`
+}
+
+// Option is one of a triage report's fixes.
+type Option struct {
+	// Letter is "A", "B", ...; Label the button's text.
+	Letter      string `json:"letter"`
+	Label       string `json:"label"`
+	Recommended bool   `json:"recommended,omitempty"`
 }
