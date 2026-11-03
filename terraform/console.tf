@@ -159,3 +159,20 @@ output "console" {
     certificate_map = google_certificate_manager_certificate_map.console.name
   }
 }
+
+# Demo media (the narrated walkthrough, backup clips): readable by the same
+# people who may open the console. Signed-in browsers open objects at
+# https://storage.cloud.google.com/<bucket>/<object>.
+resource "google_storage_bucket" "media" {
+  name                        = "${var.project_id}-media"
+  location                    = var.region
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+}
+
+resource "google_storage_bucket_iam_member" "media_viewers" {
+  for_each = toset(var.console_viewers)
+  bucket   = google_storage_bucket.media.name
+  role     = "roles/storage.objectViewer"
+  member   = each.value
+}

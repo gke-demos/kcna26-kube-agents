@@ -35,7 +35,10 @@ Friday are for re-runs and recording. Strike items through as they close.
       `cluster-admin` binding and the `frontend` PDB.
 - [ ] Clear `#platform-ops` (`tools/clear_channel.py --keep audit`) and keep the agent board idle.
 - [ ] Re-run the audits the night before each show day.
-- [ ] Booth video from the backup clips (record-demo-video skill).
+- [x] ~~Booth video~~: narrated 2.5-min walkthrough recorded headlessly (`video/`), in
+      `gs://kcna-2026-demos-media/video/2026-11-03/` (readable by google.com, the demo accounts and
+      garisingh@gke.ninja; open with https://storage.cloud.google.com/kcna-2026-demos-media/video/2026-11-03/fleet-scope-walkthrough-narrated.mp4).
+      Booth laptops keep an offline copy: `gcloud storage cp gs://kcna-2026-demos-media/video/2026-11-03/*.mp4 .`
 - [x] ~~The 3D console~~: live at https://kcna26.demo.gke.ninja behind IAP (google.com, the six
       event.goog demo accounts, garisingh@gke.ninja). Buttons: garisingh@google.com,
       garisingh@gke.ninja and the six demo accounts (`SCOPE_WRITERS` in `console/deploy/fleet-scope.yaml`).
