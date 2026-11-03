@@ -59,7 +59,28 @@ spec:
     matchLabels:
       app: ledger-db
 """
+# Not a defect: upstream's 128Mi limit OOM-kills contacts under the load
+# generator, and frontend idles just under it (measured 2026-11-03). An organic
+# crash loop would flash on the console with no planted cause, so give both
+# room.
+BANK_MEMORY_FIXES = ("contacts.yaml", "frontend.yaml")
+UPSTREAM_MEMORY = ("memory: 128Mi", "memory: 64Mi")
+ROOMIER_MEMORY = ("memory: 256Mi", "memory: 128Mi")
 EXIT_USAGE = 2
+
+
+def fix_bank_memory(repo):
+    paths = []
+    for name in BANK_MEMORY_FIXES:
+        path = repo / BANK_DIR / name
+        text = path.read_text()
+        for old, new in zip(UPSTREAM_MEMORY, ROOMIER_MEMORY):
+            if text.count(old) != 1:
+                raise SystemExit(f"{path}: expected one '{old}'")
+            text = text.replace(old, new)
+        path.write_text(text)
+        paths.append(path)
+    return paths
 
 
 def plant_frontend_replicas(repo):
@@ -87,6 +108,7 @@ def main(argv):
         plant_frontend_replicas(repo),
         plant_file(repo, BANK_DIR, OVERGRANT_FILE, OVERGRANT),
         plant_file(repo, BANK_DIR, LEDGER_PDB_FILE, LEDGER_PDB),
+        *fix_bank_memory(repo),
     ):
         print(path.relative_to(repo))
     return 0
