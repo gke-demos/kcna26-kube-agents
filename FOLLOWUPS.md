@@ -23,7 +23,8 @@ Friday are for re-runs and recording. Strike items through as they close.
       laptop, phone hotspot.
 - [ ] Who is Slack member `U0CE89JDMQC` in `#platform-ops`? Allowlist or remove.
 - [ ] Decide whether `kcna26-kube-agents` goes public.
-- [ ] Say when Claude may clear `#platform-ops`.
+- [ ] Say when Claude may clear `#platform-ops`. (Deploying the console raises drift alerts: clear after
+      the last deploy.)
 
 ## Claude
 
@@ -32,8 +33,16 @@ Friday are for re-runs and recording. Strike items through as they close.
 - [ ] Clear `#platform-ops` (`tools/clear_channel.py --keep audit`) and keep the agent board idle.
 - [ ] Re-run the audits the night before each show day.
 - [ ] Booth video from the backup clips (record-demo-video skill).
-- [ ] The 3D console (`console/`, served at https://kcna26.demo.gke.ninja behind IAP).
+- [x] ~~The 3D console~~: built, running in `fleet-scope` on the hub (`scripts/console.sh deploy --dev`,
+      port-forward only). Waiting on the PAT (buttons, PR events) and the OAuth client (the public
+      Gateway: `scripts/console.sh deploy` then `scripts/console.sh gateway`).
 - [ ] File the upstream kube-agents issues below once Gari agrees.
+
+## Fixed on the way
+
+- Bank of Anthos `contacts` OOM-killed itself under the load generator at upstream's 128Mi
+  (31 restarts); `contacts` and `frontend` now get 256Mi in the baseline (tag moved).
+- `trigger-badimage.sh` pushed `v0.10.700` on a second press; it now refuses.
 
 ## Upstream kube-agents issues found during the build
 
