@@ -47,6 +47,15 @@ cd ..
 scripts/install-hub.sh --dry-run
 scripts/install-hub.sh
 scripts/contexts.sh $PROJECT
+
+# Merged fixes land in ~30s instead of waiting up to 5 minutes behind the broken apply.
+scripts/tune-config-sync.sh
+
+# The console, at https://kcna26.demo.gke.ninja behind IAP (needs ~/.kcna26/github-pat and
+# the OAuth client files).
+scripts/console.sh build
+scripts/console.sh deploy <tag>
+scripts/console.sh gateway
 ```
 
 `install-hub.sh` passes `--enable-slack` explicitly: a non-interactive install with only the

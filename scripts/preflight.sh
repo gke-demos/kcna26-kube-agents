@@ -17,6 +17,8 @@ readonly AGENT_CONTAINER="platform-agent"
 readonly PLATFORM_HERMES_HOME="/opt/data/profiles/platform"
 readonly ROOTSYNC_NAMESPACE="config-management-system"
 readonly ROOTSYNC_NAME="root-sync"
+# Set by tune-config-sync.sh.
+readonly RECONCILE_TIMEOUT="15s"
 readonly AUDIT_LABEL="agent:audit"
 # The audit card on screen should be from last night.
 readonly AUDIT_MAX_AGE_HOURS=24
@@ -67,6 +69,10 @@ for cluster in "${!APP_NAMESPACE[@]}"; do
   errors="$(kubectl --context "$cluster" get rootsync "$ROOTSYNC_NAME" -n "$ROOTSYNC_NAMESPACE" \
     -o jsonpath='{.status.sync.errorSummary.totalCount}' 2>/dev/null)"
   [[ -z "$errors" || "$errors" == "0" ]] && ok "no sync errors" || bad "$errors sync errors (nomos status)"
+  timeout="$(kubectl --context "$cluster" get rootsync "$ROOTSYNC_NAME" -n "$ROOTSYNC_NAMESPACE" \
+    -o jsonpath='{.spec.override.reconcileTimeout}' 2>/dev/null)"
+  [[ "$timeout" == "$RECONCILE_TIMEOUT" ]] && ok "reconcile timeout $timeout" ||
+    bad "reconcile timeout '${timeout:-default 5m}': run tune-config-sync.sh (merged fixes wait otherwise)"
   pending="$(not_ready_pods "$cluster" "${APP_NAMESPACE[$cluster]}")"
   [[ -z "$pending" ]] && ok "all ${APP_NAMESPACE[$cluster]} pods ready" || bad "not ready: $(echo "$pending" | paste -sd' ')"
 done
