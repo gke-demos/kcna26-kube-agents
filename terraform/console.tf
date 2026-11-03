@@ -27,7 +27,17 @@ variable "console_host" {
 variable "console_viewers" {
   type        = list(string)
   description = "IAP principals allowed to open the console (user:..., group:...). Who may press its buttons is the Deployment's SCOPE_WRITERS."
-  default     = ["user:garisingh@google.com", "user:garisingh@gke.ninja"]
+  default = [
+    "domain:google.com",
+    "user:garisingh@gke.ninja",
+    # The event's demo accounts (booth and talk laptops).
+    "user:g0926event283@event.goog",
+    "user:g0926event284@event.goog",
+    "user:g0926event285@event.goog",
+    "user:g0926event286@event.goog",
+    "user:g0926event287@event.goog",
+    "user:g0926event288@event.goog",
+  ]
 }
 
 provider "google" {
