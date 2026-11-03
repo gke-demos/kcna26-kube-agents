@@ -80,11 +80,11 @@ export class Effects {
     this.items.push({ obj, update, t0: this.time.value });
   }
 
-  /** Expanding ring on the ground at (x, z). */
-  ripple(x, z, color, scale = 1, delay = 0) {
+  /** Expanding ring on the ground at (x, z) (at height y: the worker deck sits lower). */
+  ripple(x, z, color, scale = 1, delay = 0, y = 0.2) {
     const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0, blending: this.blending, depthWrite: false });
     const m = new THREE.Mesh(ringGeo, mat);
-    m.position.set(x, 0.2, z);
+    m.position.set(x, y, z);
     const dur = 1.6 * scale;
     this.add(m, (age) => {
       const k = (age - delay) / dur;

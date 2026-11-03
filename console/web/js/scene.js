@@ -46,10 +46,11 @@ import { buildRouter, routerId } from './routers.js';
 import { planIsland, slotPosition, slotAt, SlotTable, CELL, labelAnchor } from './layout.js';
 import { esc, duration, since, workerLabel, compact } from './format.js';
 import { Effects } from './effects.js';
+import { stateWords } from './feed.js';
 import { themeById, classColor, hex } from './themes.js';
 import { buildGround, buildWorkerDeck, clearGroup, hashString, roundedRect } from './island.js';
 import { LinkSet } from './links.js';
-import { WorkerPads, PAD_H } from './pads.js';
+import { WorkerPads, PAD_H, padTitle } from './pads.js';
 import { PARKED, WORKER_STRIP, PAD_SPACING, groupId, groupOf, groupCounts, planWorkerView, planPadArea, focusOf, levelOf, sameFocus, workerUsage, teamHues, teamCSS } from './workers.js';
 import { PointLayer, CLASS_INDEX } from './points.js';
 import { AggregateTiles } from './tiles.js';
@@ -130,6 +131,11 @@ function setHTML(el, html) {
  * reads, which force reflows): widths full, without chips (compact) and
  * name only (tiny), and heights.
  */
+// How much bigger the 'big' district labels are (style.css .district-label.big).
+const BIG_LABEL = 1.75;
+// Up to this many districts, district labels are big.
+const BIG_LABEL_DISTRICTS = 8;
+
 function labelSize(el) {
   if (el._est) return el._est;
   const name = el.querySelector('.name')?.textContent.length || 0;
@@ -142,8 +148,11 @@ function labelSize(el) {
       else base += (n.textContent || '').length * 6.2;
     }
   }
-  const nameW = name * 8 + 22;
-  el._est = { full: Math.max(nameW, base + chips + 22), compact: Math.max(nameW, base + 22), tiny: nameW, h: meta ? 38 : 24, th: 24 };
+  // Big labels (a handful of clusters, read from the back of a room): the
+  // CSS sizes them about 1.75x.
+  const k = el.classList.contains('big') ? BIG_LABEL : 1;
+  const nameW = (name * 8 + 22) * k;
+  el._est = { full: Math.max(nameW, (base + chips) * k + 22), compact: Math.max(nameW, base * k + 22), tiny: nameW, h: (meta ? 38 : 24) * k, th: 24 * k };
   return el._est;
 }
 
@@ -153,6 +162,12 @@ const CHANGE_LABEL_SECONDS = 6;
 const CLOSE_UP_DISTANCE = 20;
 // Camera-to-pad distance under which worker pads show their labels.
 const WORKER_LABEL_DISTANCE = 34;
+// Up to this many worker pads, every pad keeps its label.
+const FEW_PADS = 12;
+// Up to this many agents (workloads), the camera frames the decks closer,
+// and failing or rolling-out ones keep their labels.
+const SMALL_FLEET = 200;
+const SMALL_FLEET_FIT = 0.86;
 // Seconds agents take to move between layouts when the grouping changes.
 const MOVE_SECONDS = 0.8;
 // Above this many agents, layout changes are instant (no tween).
@@ -1188,6 +1203,16 @@ export class Scene {
         case 'worker_updated':
           this.dirtyPads.add(ev.key);
           break;
+        case 'alert':
+        case 'triage':
+        case 'triage_report':
+        case 'fix_chosen':
+        case 'pr_opened':
+        case 'pr_merged':
+        case 'pr_closed':
+        case 'action':
+          this.signalEffect(ev);
+          break;
         default:
           break;
       }
@@ -1301,6 +1326,83 @@ export class Scene {
     if (replan) this.replanSoon();
     if (workersChanged && !replan) this.rebuildWorkers();
     this.updateMarker();
+  }
+
+  /**
+   * Signals (fleet-scope): what the agents and people did about a workload.
+   * The router stands for the Slack channel / A2A gateway, the workload's
+   * worker pad for its cluster's Cluster Agent. A signal without a drawn
+   * workload plays nothing (actions still pulse the router).
+   */
+  signalEffect(ev) {
+    const now = this.time.value;
+    const fx = theme.effects;
+    if (ev.type === 'action') {
+      const o = this.router?.origin;
+      if (o) this.effects.ripple(o.x, o.z, fx.beam, 0.8, 0, Math.max(0.2, o.y - 1.5));
+      return;
+    }
+    const rec = ev.key && this.recs.get(ev.key);
+    if (!rec || !this.router) return;
+    const top = () => new THREE.Vector3(rec.x, this.topOf(rec) + 0.2, rec.z);
+    const fly = (from, to, color, onArrive) => {
+      if (this.router.arcStyle === 'comet') this.effects.comet(from, to, color, onArrive);
+      else this.effects.arc(from, to, color, onArrive);
+    };
+    switch (ev.type) {
+      case 'alert': {
+        // Out to the channel: workload -> router, and a shock where it hurts.
+        const from = top();
+        this.effects.shock(rec.x, rec.z, fx.crash);
+        const origin = this.router.origin.clone();
+        fly(from, origin, fx.alert, () => this.router.wake(from, this.time.value));
+        this.pinLabel(rec.key, CHANGE_LABEL_SECONDS * 2);
+        break;
+      }
+      case 'triage':
+      case 'triage_report': {
+        // The Cluster Agent looks: its beam drops and its pad pulses.
+        if (ev.type === 'triage') this.effects.beam(rec.x, rec.z, fx.triage);
+        else {
+          this.effects.ripple(rec.x, rec.z, fx.triage, 1.4);
+          this.effects.ripple(rec.x, rec.z, fx.triage, 1.4, 0.4);
+        }
+        const pad = rec.agent.worker && this.pads.get(rec.agent.worker);
+        if (pad) {
+          const o = this.workerOrigin();
+          this.effects.ripple(pad.pos.x + o.x, pad.pos.z + o.z, fx.triage, 1.2, 0, o.y + 0.4);
+          if (this.beams) {
+            this.recentBeams.set(rec.key, now + BEAM_RECENT);
+            this.syncBeam(rec, !this.beams.has(rec.key));
+          }
+        }
+        this.pinLabel(rec.key, CHANGE_LABEL_SECONDS);
+        break;
+      }
+      case 'fix_chosen':
+        fly(this.router.wake(top(), now), top(), fx.triage, () => this.flash(rec.key));
+        this.pinLabel(rec.key, CHANGE_LABEL_SECONDS);
+        break;
+      case 'pr_opened':
+      case 'pr_closed':
+        this.effects.beam(rec.x, rec.z, ev.type === 'pr_opened' ? fx.pr : fx.removed);
+        this.pinLabel(rec.key, CHANGE_LABEL_SECONDS);
+        break;
+      case 'pr_merged': {
+        // Config Sync picks the merge up: router -> workload, then a ripple.
+        const to = top();
+        fly(this.router.wake(to, now), to, fx.merge, () => {
+          this.effects.ripple(rec.x, rec.z, fx.merge, 1.6);
+          this.effects.ripple(rec.x, rec.z, fx.merge, 1.6, 0.35);
+          this.flash(rec.key);
+        });
+        this.pinLabel(rec.key, CHANGE_LABEL_SECONDS * 2);
+        break;
+      }
+      default:
+        break;
+    }
+    this.flash(rec.key);
   }
 
   /** Moves an agent to its new class and animates its pose. */
@@ -1841,9 +1943,8 @@ export class Scene {
     L.workers.center.set(0, 0.5);
     L.agents.visible = this.deckA.agents > 0.5;
     L.workers.visible = this.deckA.workers > 0.5;
-    const pools = this.deck.tiles.length;
-    setHTML(L.agents.element, `<div class="name">Agents</div><div class="meta">${compact(this.model.agents.size)} · ${this.plan.districts.size} atespace${this.plan.districts.size === 1 ? '' : 's'}</div>`);
-    setHTML(L.workers.element, `<div class="name">Workers</div><div class="meta">${compact(this.model.workers.size)} · ${pools} pool${pools === 1 ? '' : 's'} · ${compact(this.holders.size)} agents on them</div>`);
+    setHTML(L.agents.element, `<div class="name">Workloads</div><div class="meta">${compact(this.model.agents.size)} · ${this.plan.districts.size} cluster${this.plan.districts.size === 1 ? '' : 's'}</div>`);
+    setHTML(L.workers.element, `<div class="name">kube-agents</div><div class="meta">${compact(this.model.workers.size)} agent${this.model.workers.size === 1 ? '' : 's'} · watching ${compact(this.holders.size)} workloads</div>`);
     const W = this.renderer.domElement.clientWidth;
     const H = this.renderer.domElement.clientHeight;
     const p = L.workers.position.clone().project(this.camera);
@@ -1857,11 +1958,11 @@ export class Scene {
     const c = this.agg.get(d.name);
     const wk = this.model.workers.get(d.name);
     const cap = wk?.capacityActors;
-    const agents = `${c.total} agent${c.total === 1 ? '' : 's'}`;
+    const agents = `${c.total} workload${c.total === 1 ? '' : 's'}`;
     const teams = [...c.teams.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, 3);
     const chips = teams.map(([name, n]) => `<span class="chip team" style="--c:${teamCSS(this.teams.get(name) ?? 0, theme)}">${esc(name)} ${n}</span>`);
     const state = wk?.state && wk.state !== 'ACTIVE' ? `<span class="badge">${esc(wk.state.toLowerCase())}</span>` : '';
-    return `<div class="name">${esc(wk ? workerLabel(wk) : d.name)}${state}</div><div class="meta">${wk?.node ? `<span class="node">${esc(wk.node)}</span> · ` : ''}${cap ? `${c.total}/${cap} agents` : agents} ${chips.join('')}</div>`;
+    return `<div class="name">${esc(wk ? workerLabel(wk) : d.name)}${state}</div><div class="meta">${wk?.node ? `<span class="node">${esc(wk.node)}</span> · ` : ''}${cap ? `${c.total}/${cap} workloads` : agents} ${chips.join('')}</div>`;
   }
 
   updateDistrictLabels() {
@@ -1871,15 +1972,20 @@ export class Scene {
     for (const d of this.plan.districts.values()) {
       if (!d.label) continue;
       const c = this.agg.get(d.name);
-      const agents = `${c.total} agent${c.total === 1 ? '' : 's'}`;
+      const agents = `${c.total} workload${c.total === 1 ? '' : 's'}`;
       let html;
       if (d.kind === 'worker') html = this.platformHTML(d);
       else if (d.kind === 'parked') {
-        html = `<div class="name">Not on a worker</div><div class="meta">${agents} ${chip('suspended', c.suspended, 'suspended')}${chip('pending', c.pending, 'pending')}${chip('crashed', c.crashed, 'crashed')}${chip('transition', c.transition, 'changing')}</div>`;
+        html = `<div class="name">Not watched</div><div class="meta">${agents} ${chip('suspended', c.suspended, 'scaled to 0')}${chip('pending', c.pending, 'pending')}${chip('crashed', c.crashed, 'failing')}${chip('transition', c.transition, 'rolling out')}</div>`;
       } else {
-        html = `<div class="name">${esc(d.name)}</div><div class="meta">${agents} ${chip('running', c.running, 'running')}${chip('transition', c.transition, 'changing')}${chip('crashed', c.crashed, 'crashed')}</div>`;
+        html = `<div class="name">${esc(d.name)}</div><div class="meta">${agents} ${chip('running', c.running, 'healthy')}${chip('transition', c.transition, 'rolling out')}${chip('crashed', c.crashed, 'failing')}${chip('pending', c.pending, 'pending')}</div>`;
       }
       setHTML(d.label, html);
+      const big = d.kind === 'atespace' && this.plan.districts.size <= BIG_LABEL_DISTRICTS;
+      if (d.label.classList.contains('big') !== big) {
+        d.label.classList.toggle('big', big);
+        d.label._est = null;
+      }
       d.label.classList.toggle('dim', c.match === 0 && c.total > 0);
       d.label.classList.toggle('focused', d.kind === 'worker' && this.focus.worker === d.name);
     }
@@ -1888,13 +1994,13 @@ export class Scene {
       if (!f.label) continue;
       let hosted = 0;
       for (const w of f.workers) hosted += this.hosted.get(w) || 0;
-      setHTML(f.label, `<div class="name">${esc(f.name || 'pool')}</div><div class="meta">${f.workers.length} workers · ${compact(hosted)} agents</div>`);
+      setHTML(f.label, `<div class="name">${esc(f.name || 'pool')}</div><div class="meta">${f.workers.length} agent${f.workers.length === 1 ? '' : 's'} · ${compact(hosted)} workloads watched</div>`);
     }
     for (const f of [...(this.plan.frames || []), ...(this.plan.padFrames || [])]) {
       if (!f.label) continue;
       const c = this.agg.sum(f.workers);
       const pads = this.group !== 'worker';
-      const html = `<div class="name">${esc(f.name || 'pool')}</div><div class="meta">${f.workers.length} workers${pads ? '' : ` · ${c.total} agents ${chip('running', c.running, 'running')}${chip('crashed', c.crashed, 'crashed')}`}</div>`;
+      const html = `<div class="name">${esc(f.name || 'pool')}</div><div class="meta">${f.workers.length} agents${pads ? '' : ` · ${c.total} workloads ${chip('running', c.running, 'healthy')}${chip('crashed', c.crashed, 'failing')}`}</div>`;
       setHTML(f.label, html);
     }
     for (const l of this.platformLabels) if (l.visible && l.userData.d) this.fillPlatformLabel(l, l.userData.d);
@@ -2675,6 +2781,11 @@ export class Scene {
   }
 
   /** Frames the whole island; smooth: fly there instead of jumping. */
+  /** A small fleet (a demo's few dozen workloads) is framed closer: the decks fill the screen. */
+  fitScale() {
+    return this.model && this.model.agents.size <= SMALL_FLEET ? SMALL_FLEET_FIT : 1;
+  }
+
   fitCamera(smooth = false) {
     // Frame the island in the part of the view the events panel leaves
     // free: pull back to fit the narrower width and shift the target left
@@ -2725,7 +2836,8 @@ export class Scene {
       const z1 = Math.max(I.cz + I.depth / 2, D.cz + D.depth / 2);
       const span = Math.max(x1 - x0, I.width, D.width, (z1 - z0) * 1.2, I.depth * 1.5, D.depth * 1.5);
       const height = Math.abs(D.y);
-      const dist = Math.max(34, span * 1.12, height * 2.9) * (W / (W - inset));
+      const k = this.fitScale();
+      const dist = Math.max(34 * k, span * 1.12, height * 2.9 * k) * (W / (W - inset));
       const viewW = 2 * dist * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect;
       const cx = (x0 + x1) / 2 - (inset / 2 / W) * viewW;
       const cz = (z0 + z1) / 2 + (z1 - z0) * 0.08;
@@ -3154,15 +3266,17 @@ export class Scene {
     const wp = new THREE.Vector3();
     const fr = this.frustum();
     const o = this.workerOrigin();
+    const few = this.pads.count <= FEW_PADS;
     for (const [name, p] of this.pads.pads) {
-      wp.set(p.x + o.x, o.y + 0.2, p.z + 2.6 + o.z);
+      wp.set(p.x + o.x, o.y + 0.2, p.z + 2.6 + (p.labelDrop || 0) + o.z);
       const focused = name === this.focus.worker;
       const card = focused && this.focus.strong;
       const notable = !!p.worker.state && p.worker.state !== 'ACTIVE';
       const prio = card ? 0 : focused ? 1 : notable ? 2 : 3;
       const d = cam.distanceTo(wp);
       const near = d < WORKER_LABEL_DISTANCE;
-      const want = card || (!byWorker && mode !== 'off' && (prio < 3 || near || mode === 'all'));
+      // A handful of pads (kube-agents' own agents) are always labeled.
+      const want = card || (!byWorker && mode !== 'off' && (prio < 3 || near || few || mode === 'all'));
       if (want && (card || fr.containsPoint(wp))) items.push({ p, prio, d, at: wp.clone() });
     }
     items.sort((a, b) => a.prio - b.prio || a.d - b.d);
@@ -3178,7 +3292,7 @@ export class Scene {
       const x = (at.x * 0.5 + 0.5) * W;
       const y = (-at.y * 0.5 + 0.5) * H;
       // Estimated from the text: the element isn't laid out while hidden.
-      const chars = Math.max(10, (p.worker.pod || p.worker.name).length + 2);
+      const chars = Math.max(10, padTitle(p.worker).name.length + 2, padTitle(p.worker).role.length * 0.8 + 14);
       const half = chars * 3.2 + 6;
       const box = { x0: x - half, x1: x + half, y0: y - 15, y1: y + 15 };
       if (placed.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) continue;
@@ -3247,9 +3361,13 @@ export class Scene {
     const cands = new Set();
     const deckHidden = this.layout === 'decks' && this.deckA.agents < 0.5;
     if (this.selected && !deckHidden) cands.add(this.selected);
+    // A small fleet: every workload that isn't healthy (or scaled to 0)
+    // keeps its label, whatever else is on screen.
+    const small = this.recs.size <= SMALL_FLEET;
+    const alarm = (rec) => small && (rec.cls === 'crashed' || rec.cls === 'transition' || rec.cls === 'pending');
     if (mode !== 'off' && !farView && !deckHidden) {
       for (const k of this.labelPinned.keys()) cands.add(k);
-      if (maxDist > 0) for (const k of this.allShapes ? this.recs.keys() : this.near) cands.add(k);
+      if (maxDist > 0 || small) for (const k of this.allShapes ? this.recs.keys() : this.near) cands.add(k);
     }
     for (const key of cands) {
       const rec = this.recs.get(key);
@@ -3262,6 +3380,7 @@ export class Scene {
       let prio;
       if (selected) prio = -1e9;
       else if (mode === 'off') continue;
+      else if (alarm(rec) && rec.match) prio = -1e8;
       else if (pinned && rec.match) prio = -until; // newest change first
       else if (d <= maxDist && rec.match) prio = d;
       else continue;
@@ -3287,10 +3406,11 @@ export class Scene {
       p.set(rec.x, this.topOf(rec) + 0.13, rec.z).project(this.camera);
       const x = (p.x * 0.5 + 0.5) * W;
       const y = (-p.y * 0.5 + 0.5) * H;
-      const w = 40 + rec.agent.name.length * 7 + (rec.agent.state.length + 8) * 5.6;
-      const box = { x0: x - w * 0.1, x1: x + w * 0.9, y0: y - 22, y1: y };
+      const w = 40 + rec.agent.name.length * 8.5 + (stateWords(rec.agent).length + 6) * 6.4;
+      const box = { x0: x - w * 0.1, x1: x + w * 0.9, y0: y - 26, y1: y };
       const hit = placed.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0);
-      if (hit && item.d > -1e9) continue;
+      // The selected workload and failing ones (small fleets) always show.
+      if (hit && item.d > -1e8) continue;
       placed.push(box);
       agentBoxes.push({ ...box, selected: item.d <= -1e9 });
       chosen.push(item);
@@ -3309,7 +3429,8 @@ export class Scene {
       obj.position.set(rec.x, this.topOf(rec) + 0.13, rec.z);
       const a = rec.agent;
       const age = duration(since(a.stateSince, now));
-      const html = `<span class="dot" style="background:${cssColor(a.state)}"></span>${esc(a.name)}<span class="sub">${esc(a.state.toLowerCase())} ${age}</span>`;
+      const html = `<span class="dot" style="background:${cssColor(a.state)}"></span>${esc(a.name)}<span class="sub">${esc(stateWords(a))} ${age}</span>`;
+      obj.element.classList.toggle('alarm', rec.cls === 'crashed');
       if (obj.element.innerHTML !== html) obj.element.innerHTML = html;
       obj.element.classList.toggle('selected', rec.key === this.selected);
       obj.element.classList.toggle('fading', !!item.fade);

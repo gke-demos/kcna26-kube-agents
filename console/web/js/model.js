@@ -39,14 +39,22 @@ export function stateClass(state) {
   }
 }
 
-/** Human label of a visual class. */
+/** Human label of a visual class (fleet-scope: a workload's health). */
 export const CLASS_LABEL = {
-  running: 'Running',
-  transition: 'Changing',
-  suspended: 'Suspended',
-  crashed: 'Crashed',
+  running: 'Healthy',
+  transition: 'Rolling out',
+  suspended: 'Scaled to 0',
+  crashed: 'Failing',
   pending: 'Pending',
 };
+
+/** Signal event types (what agents and people did about the fleet; see events.go). */
+export const SIGNAL_TYPES = new Set(['alert', 'triage', 'triage_report', 'fix_chosen', 'pr_opened', 'pr_merged', 'pr_closed', 'audit', 'chat', 'action']);
+
+/** Whether an event is a signal. */
+export function isSignal(ev) {
+  return SIGNAL_TYPES.has(ev?.type);
+}
 
 export class Model {
   constructor() {
@@ -59,6 +67,8 @@ export class Model {
     this.seq = 0;
     this.features = {};
     this.sources = [];
+    /** Latest signals at the snapshot (oldest first). */
+    this.recent = [];
     /** @type {Map<string, any>} */
     this.agents = new Map();
     /** @type {Map<string, any>} */
@@ -74,6 +84,7 @@ export class Model {
     this.seq = snap.seq;
     this.features = snap.features || {};
     this.sources = snap.sources || [];
+    this.recent = snap.recent || [];
     for (const a of snap.atespaces || []) this.atespaces.set(a.name, a);
     for (const a of snap.agents || []) this.agents.set(`${a.atespace}/${a.name}`, a);
     for (const w of snap.workers || []) this.workers.set(w.name, w);

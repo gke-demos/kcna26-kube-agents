@@ -149,11 +149,9 @@ test('usage: no CPU/memory allocation reported says "not reported", never an emp
   assert.equal(idle.cpu.reported, true);
   assert.equal(idle.cpu.frac, 0);
   const card = padLabelHTML({ name: 'w-1', pod: 'wk-01' }, real, true);
-  assert.match(card, /CPU<\/span><span class="na">not reported/);
-  assert.match(card, /Memory<\/span><span class="na">not reported/);
-  assert.match(card, /capacity 8/);
-  assert.match(card, /capacity 32 GiB/);
-  assert.match(card, /1 \/ 1000/);
+  // fleet-scope: an unreported resource is left out, not drawn empty.
+  assert.doesNotMatch(card, /not reported/);
+  assert.match(card, /watching 1 workload</);
   // Only the slots bar is drawn on the pad (the others are scaled away).
   const g = new THREE.Group();
   const pads = new WorkerPads(g, fakeLabel);
@@ -261,11 +259,11 @@ test('usage: quantities parse and format; unknown capacity stays unknown', () =>
   const card = padLabelHTML({ name: 'w-1', pod: 'wk-01', node: 'n1', state: 'DRAINING' }, u, true);
   assert.match(card, /wk-01/);
   assert.match(card, /on n1/);
-  assert.match(card, /10 agents/);
+  assert.match(card, /watching 10 workloads/);
   assert.match(card, /4 \/ 16/);
   assert.match(card, /16 GiB \/ 64 GiB/);
   assert.match(card, /draining/);
-  assert.match(padLabelHTML({ name: 'w-2' }, bare, true), /capacity unknown/);
+  assert.match(padLabelHTML({ name: 'w-2' }, bare, true), /watching 3 workloads/);
 });
 
 test('atespace tints are stable and spread out', () => {
@@ -433,7 +431,7 @@ test('pads: instanced (no per-pad meshes or materials); resync, update, labels, 
   pads.setFocus({ worker: 'w-2', strong: true });
   pads.showLabels([{ name: 'w-2', card: true }]);
   const card = pads.labelFor('w-2');
-  assert.match(card.element.innerHTML, /Slots/);
+  assert.match(card.element.innerHTML, /watching 2 workloads/);
   assert.ok(card.element.classList.contains('card'));
   pads.setFocus({ worker: null, strong: false });
   assert.ok(!card.element.classList.contains('card'));

@@ -19,7 +19,7 @@
 
 import { THEMES, themeById, cssVars } from './themes.js';
 
-const STORE = 'substrate-scope:theme';
+const STORE = 'fleet-scope:theme';
 const TOUR_SECONDS = 8;
 
 function stored() {

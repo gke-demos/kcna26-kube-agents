@@ -29,13 +29,13 @@ import { groupId } from './workers.js';
 import { layoutId, beamModeId, parseOffsets, serializeOffsets } from './decks.js';
 
 const STORE = {
-  router: 'substrate-scope:router',
-  agents: 'substrate-scope:agents',
-  extras: 'substrate-scope:extras',
-  group: 'substrate-scope:group',
-  layout: 'substrate-scope:layout',
-  beams: 'substrate-scope:beams',
-  decks: 'substrate-scope:decks',
+  router: 'fleet-scope:router',
+  agents: 'fleet-scope:agents',
+  extras: 'fleet-scope:extras',
+  group: 'fleet-scope:group',
+  layout: 'fleet-scope:layout',
+  beams: 'fleet-scope:beams',
+  decks: 'fleet-scope:decks',
 };
 
 function stored(key) {

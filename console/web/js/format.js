@@ -61,6 +61,17 @@ export function clock(iso) {
   return d.toLocaleTimeString([], { hour12: false });
 }
 
+/** Relative time for the feed: "just now", "42s ago", "5m ago", "3h ago", "2d ago". */
+export function ago(iso, now = Date.now()) {
+  const s = Math.floor((now - Date.parse(iso)) / 1000);
+  if (!iso || !Number.isFinite(s)) return '';
+  if (s < 5) return 'just now';
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400 * 2) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
 /** A count for tight spaces: 9,876 exactly, then 12.3k, 123k, 1.2M. */
 export function compact(n) {
   const v = Math.round(Number(n) || 0);

@@ -18,7 +18,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>substrate-scope</title>
+    <title>fleet-scope · kube-agents @ KubeCon NA 2026</title>
     <link rel="stylesheet" href="style.css" />
     <script type="importmap">
       {
@@ -35,47 +35,49 @@
     <header id="topbar">
       <div class="brand">
         <span class="logo"></span>
-        <span class="title">substrate<span class="thin">scope</span></span>
+        <span class="title">fleet<span class="thin">scope</span></span>
+        <span class="subtitle">kube-agents @ KubeCon NA 2026</span>
         <span class="sep"></span>
         <span id="cluster" class="cluster"></span>
         <span id="conn" class="conn connecting"><span class="led"></span><span class="txt">connecting</span></span>
       </div>
+      <nav id="links" class="links" aria-label="Links"></nav>
       <div id="legend" class="legend"></div>
       <div class="filters">
-        <select id="atespace" aria-label="Atespace"><option value="">All atespaces</option></select>
-        <input id="prefix" type="search" placeholder="Name prefix  /" spellcheck="false" autocomplete="off" aria-label="Name prefix" />
-        <div id="layout" class="seg" role="group" aria-label="Layout" title="Layout: agents and workers on two decks (1, 2, 3 fade them), or one island">
+        <select id="atespace" aria-label="Cluster"><option value="">All clusters</option></select>
+        <input id="prefix" type="search" placeholder="Workload  /" spellcheck="false" autocomplete="off" aria-label="Workload name prefix" />
+        <div id="layout" class="seg" hidden role="group" aria-label="Layout" title="Layout: workloads and kube-agents on two decks (1, 2, 3 fade them), or one island">
           <span class="seg-k">Layout</span><button data-layout="decks" aria-pressed="true">decks</button><button data-layout="combined" aria-pressed="false">combined</button>
         </div>
         <div id="deckctl" class="seg decks-only" role="group" aria-label="Deck layout">
-          <button id="deck-link" class="deck-link" aria-pressed="true" title="Decks linked: dragging a deck moves both (Shift+L)"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path class="ch-a" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path class="ch-b" d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/><path class="ch-x" d="M4 4l3 3M20 20l-3-3"/></svg><span class="sr">Link decks</span></button>
+          <button id="deck-link" class="deck-link" hidden aria-pressed="true" title="Decks linked: dragging a deck moves both (Shift+L)"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path class="ch-a" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path class="ch-b" d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/><path class="ch-x" d="M4 4l3 3M20 20l-3-3"/></svg><span class="sr">Link decks</span></button>
           <button id="deck-reset" title="Reset the decks' layout and the view (r)"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg><span class="sr">Reset deck layout</span></button>
         </div>
-        <div id="beams" class="seg decks-only" role="group" aria-label="Beams" title="Beams: focus draws them only for the agent or worker in focus and recent wakes and suspends (ribbons carry the rest); all draws every beam up to 4,000 (b)">
+        <div id="beams" class="seg decks-only" hidden role="group" aria-label="Beams" title="Beams: focus draws them only for the workload or agent in focus and recent changes (ribbons carry the rest); all draws every beam (b)">
           <span class="seg-k">Beams</span><button data-beams="focus" aria-pressed="true">focus</button><button data-beams="all" aria-pressed="false">all</button>
         </div>
-        <div id="group" class="seg" role="group" aria-label="Group agents by" title="Group agents by atespace or by the worker they run on (g)">
-          <span class="seg-k">Group</span><button data-group="atespace" aria-pressed="true">atespace</button><button data-group="worker" aria-pressed="false">worker</button>
+        <div id="group" class="seg" hidden role="group" aria-label="Group workloads by" title="Group workloads by cluster or by the agent watching them (g)">
+          <span class="seg-k">Group</span><button data-group="atespace" aria-pressed="true">cluster</button><button data-group="worker" aria-pressed="false">agent</button>
         </div>
-        <button id="labels" class="labels-btn" title="Agent labels: auto shows the selected agent, recent changes and close-ups; all; off (l)">Labels: auto</button>
-        <button id="home" class="icon" title="Show the whole cluster (h)">⌂</button>
-        <select id="router-pick" class="look-pick" aria-label="Router look" title="Router: how the atenet router looks"></select>
-        <select id="agents-pick" class="look-pick" aria-label="Agent shape" title="Agents: the shape of each agent (x toggles idle rings and particles)"></select>
+        <button id="labels" class="labels-btn" title="Workload labels: auto shows the selected workload, recent changes and close-ups; all; off (l)">Labels: auto</button>
+        <button id="home" class="icon" title="Show the whole fleet (h)">⌂</button>
+        <select id="router-pick" class="look-pick" hidden aria-label="Gateway look" title="How the Slack / A2A gateway looks"></select>
+        <select id="agents-pick" class="look-pick" hidden aria-label="Workload shape" title="The shape of each workload"></select>
         <div id="themes" class="themes"></div>
       </div>
     </header>
 
     <aside id="panel" class="panel" aria-live="polite"></aside>
 
-    <aside id="feedpanel" class="feed-panel" aria-label="Live events">
+    <aside id="feedpanel" class="feed-panel" aria-label="Fleet activity">
       <div class="feed-head">
-        <h3>Live events</h3>
+        <h3>Fleet activity</h3>
         <span id="feedcount" class="muted small"></span>
-        <button id="feed-collapse" class="close" title="Hide live events (e)">‹</button>
+        <button id="feed-collapse" class="close" title="Hide fleet activity (e)">‹</button>
       </div>
       <div id="feed" class="feed-list"></div>
     </aside>
-    <button id="feed-tab" class="feed-tab" title="Show live events (e)">Events<span id="feed-unread" class="unread"></span></button>
+    <button id="feed-tab" class="feed-tab" title="Show fleet activity (e)">Activity<span id="feed-unread" class="unread"></span></button>
 
     <footer id="statusbar">
       <span id="total"></span>
@@ -94,6 +96,8 @@
         <button data-scroll="auto">auto</button><button data-scroll="zoom">zoom</button><button data-scroll="pan">pan</button>
       </div>
     </div>
+
+    <section id="controls" class="controls" hidden aria-label="Demo controls"></section>
 
     <div id="tooltip"></div>
 

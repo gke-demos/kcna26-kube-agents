@@ -61,5 +61,29 @@ test('feed prefers the meaningful event over the raw state change', () => {
     { seq: 2, type: 'agent_woke', key: 'a/x', agent, from: 'SUSPENDED', reason: 'ResumedByRequest' },
   ]);
   assert.equal(lines.length, 1);
-  assert.match(lines[0].text, /woke by a request/);
+  assert.match(lines[0].text, /scaled up/);
+});
+
+test('feed: failing workloads say why, signals keep their link and key', () => {
+  const agent = { atespace: 'boutique-prod', name: 'recommendationservice', state: 'CRASHED', reason: 'OOMKilled' };
+  const [crash] = describe([{ seq: 1, type: 'agent_crashed', key: 'boutique-prod/recommendationservice', agent, message: 'container killed' }]);
+  assert.match(crash.text, /recommendationservice<\/b> failing: OOMKilled/);
+  const [back] = describe([{ seq: 2, type: 'agent_state', key: 'boutique-prod/recommendationservice', agent: { ...agent, state: 'RUNNING', reason: '' }, from: 'CRASHED', to: 'RUNNING' }]);
+  assert.match(back.text, /healthy$/);
+  const [sig] = describe([{ seq: 3, type: 'pr_opened', key: 'boutique-prod/recommendationservice', title: 'Raise memory <limit>', link: 'https://github.com/o/r/pull/1', actor: 'kube-agents' }]);
+  assert.equal(sig.type, 'signal');
+  assert.equal(sig.sig, 'pr_opened');
+  assert.equal(sig.cluster, 'boutique-prod');
+  assert.equal(sig.text, 'Raise memory &lt;limit&gt;');
+  assert.equal(sig.link, 'https://github.com/o/r/pull/1');
+  const [bare] = describe([{ seq: 4, type: 'alert', key: 'bank-prod/ledger-db' }]);
+  assert.equal(bare.title, 'alert on ledger-db');
+});
+
+test('snapshot keeps the recent signals', () => {
+  const m = new Model();
+  m.applySnapshot({ ...snap, recent: [{ seq: 9, type: 'alert', key: 'a/x', title: 't' }] });
+  assert.equal(m.recent.length, 1);
+  m.applySnapshot(snap);
+  assert.deepEqual(m.recent, []);
 });

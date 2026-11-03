@@ -30,10 +30,11 @@ export const GAP = 0.8;
  * corner, at the front of the label strip just behind the first row. Labels
  * are sized in pixels, so zoomed out one is far deeper than the strip; pinned
  * by its bottom it grows back over the strip and the gap, not over the
- * agents (rows fill from the strip forward).
+ * agents (rows fill from the strip forward). A district in a one-row island
+ * (labelBack) pins it at its back edge: the label floats over the sky behind.
  */
 export function labelAnchor(district) {
-  return { x: district.x + 0.4, z: district.z + (district.strip ?? LABEL_STRIP) - 0.15 };
+  return { x: district.x + 0.4, z: district.labelBack ? district.z - 0.6 : district.z + (district.strip ?? LABEL_STRIP) - 0.15 };
 }
 
 /**
@@ -104,6 +105,21 @@ export function squarify(items, rect) {
   return out;
 }
 
+/** Up to this many districts holding up to ROW_CELLS cells in all, the island is one row. */
+export const ROW_DISTRICTS = 4;
+export const ROW_CELLS = 400;
+
+/** Side-by-side rects across the island, widths by weight, in the items' order. */
+function rowRects(items, total, width, depth) {
+  let x = -width / 2;
+  return items.map((it) => {
+    const w = (width * it.weight) / total;
+    const rc = { key: it.key, x, y: -depth / 2, w, h: depth };
+    x += w;
+    return rc;
+  });
+}
+
 /** Cells a district reserves for n agents: room to grow without re-flowing. */
 export function reservedCells(n) {
   return Math.max(6, Math.ceil(n * 1.35) + 2);
@@ -123,11 +139,14 @@ export function planIsland(atespaces) {
   // Each cell costs CELL^2; districts add padding and a label strip, which
   // matters most for small ones.
   let area = totalCells * CELL * CELL * 1.25 + atespaces.length * 22;
-  const aspect = 1.6;
+  // A few small districts (a demo fleet's clusters) stand in one row, in the
+  // order given, so each one's label has the sky above it to itself.
+  const row = atespaces.length >= 2 && atespaces.length <= ROW_DISTRICTS && totalCells <= ROW_CELLS;
+  const aspect = row ? atespaces.length * 1.15 : 1.6;
   for (let attempt = 0; attempt < 40; attempt++) {
     const depth = Math.sqrt(area / aspect);
     const width = depth * aspect;
-    const rects = squarify(items, { x: -width / 2, y: -depth / 2, w: width, h: depth });
+    const rects = row ? rowRects(items, totalCells, width, depth) : squarify(items, { x: -width / 2, y: -depth / 2, w: width, h: depth });
     const districts = new Map();
     let fits = true;
     for (const rc of rects) {
@@ -138,7 +157,7 @@ export function planIsland(atespaces) {
       const capacity = cols * rows;
       const need = atespaces.find((a) => a.name === rc.key)?.count ?? 0;
       if (capacity < Math.max(need, 1)) fits = false;
-      districts.set(rc.key, { name: rc.key, kind: 'atespace', x: rc.x + GAP / 2, z: rc.y + GAP / 2, w, d, cols, rows, capacity });
+      districts.set(rc.key, { name: rc.key, kind: 'atespace', x: rc.x + GAP / 2, z: rc.y + GAP / 2, w, d, cols, rows, capacity, ...(row ? { labelBack: true } : {}) });
     }
     if (fits) return { width, depth, districts };
     area *= 1.15;

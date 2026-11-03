@@ -52,6 +52,21 @@ test('planIsland gives every atespace room for its agents', () => {
   assert.ok(plan.districts.get('big').capacity > plan.districts.get('mid').capacity);
 });
 
+test('a few small districts stand in one row, in the order given', () => {
+  const atespaces = [
+    { name: 'bank-prod', count: 9 },
+    { name: 'boutique-prod', count: 12 },
+    { name: 'kube-agents-hub', count: 8 },
+  ];
+  const plan = planIsland(atespaces);
+  const ds = atespaces.map((a) => plan.districts.get(a.name));
+  for (let i = 0; i < ds.length; i++) {
+    assert.ok(ds[i].capacity >= atespaces[i].count);
+    assert.ok(Math.abs(ds[i].z - ds[0].z) < 1e-9, 'same row');
+    if (i) assert.ok(ds[i].x > ds[i - 1].x + ds[i - 1].w - 1e-9, 'left to right');
+  }
+});
+
 test('slots stay inside their district', () => {
   const plan = planIsland([{ name: 'x', count: 30 }]);
   const d = plan.districts.get('x');

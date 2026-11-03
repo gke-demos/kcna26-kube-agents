@@ -35,32 +35,53 @@ const BAR_W = PAD_W - 0.5;
 /** Fill at or above which a bar shows as full. */
 export const FULL = 0.9;
 
+/** Up to this many pads in one row, every other label drops LABEL_DROP units toward the front. */
+const STAGGER_MAX = 12;
+const LABEL_DROP = 3.2;
+
 function pct(f) {
   return `${Math.round(Math.min(f, 9.99) * 100)}%`;
 }
 
-/** The label's HTML: compact (name, agents) or a card (in focus). */
+/** Roles of kube-agents' own agents, by pod name. */
+const ROLES = {
+  'planning-agent': ['Planning Agent', 'plans and delegates'],
+  'platform-agent': ['Platform Agent', 'fleet and GitOps'],
+};
+const CLUSTER_AGENT = 'cluster-agent-';
+
+/**
+ * A pad's title and role: a Cluster Agent is named for its cluster
+ * ("boutique-prod", "Cluster Agent"), the planning and platform agents for
+ * their role; anything else by its pod name.
+ */
+export function padTitle(worker) {
+  const n = workerLabel(worker);
+  if (n.startsWith(CLUSTER_AGENT)) return { name: n.slice(CLUSTER_AGENT.length), role: 'Cluster Agent' };
+  const r = ROLES[n];
+  return r ? { name: r[0], role: r[1] } : { name: n, role: '' };
+}
+
+/** The label's HTML: compact (name, workloads) or a card (in focus). */
 export function padLabelHTML(worker, usage, card) {
-  const name = esc(workerLabel(worker));
+  const t = padTitle(worker);
+  const name = esc(t.name);
   const n = usage.actors.used;
   const state = worker.state && worker.state !== 'ACTIVE' ? `<span class="badge">${esc(worker.state.toLowerCase())}</span>` : '';
-  const agents = `${n} agent${n === 1 ? '' : 's'}`;
-  if (!card) return `<div class="name">${name}${state}</div><div class="meta">${agents}${usage.actors.cap ? ` / ${usage.actors.cap}` : ''}</div>`;
+  // fleet-scope: a pad is one of kube-agents' agents; its "agents" are the
+  // workloads it watches (a Cluster Agent watches its cluster's).
+  const workloads = n ? `${n} workload${n === 1 ? '' : 's'}` : '';
+  const watching = workloads && `watching ${workloads}`;
+  const meta = [t.role, watching].filter(Boolean).map(esc).join(' · ') || esc(worker.pool || '');
+  if (!card) return `<div class="name">${name}${state}</div><div class="meta">${[t.role, workloads].filter(Boolean).map(esc).join(' · ') || esc(worker.pool || '')}</div>`;
   const bar = (label, u, text) =>
     `<div class="use"><span class="k">${label}</span><span class="bar${u.frac >= FULL ? ' full' : ''}"><i style="width:${Math.min(100, u.frac * 100).toFixed(0)}%"></i></span><span class="v">${text}</span></div>`;
-  // A resource the worker doesn't report allocation for says so instead of
-  // drawing an empty bar (ax tasks declare no limits, so real workers
-  // allocate nothing even while they host agents).
-  const missing = (label, u, fmt) =>
-    `<div class="use unreported"><span class="k">${label}</span><span class="na">not reported</span><span class="v">${Number.isFinite(u?.cap) ? `capacity ${fmt(u.cap)}` : ''}</span></div>`;
+  // Only what the agent's pod reports: no empty "not reported" rows.
   const rows = [];
-  if (usage.actors.cap) rows.push(bar('Slots', usage.actors, `${n} / ${usage.actors.cap}`));
   if (usage.cpu?.reported) rows.push(bar('CPU', usage.cpu, `${formatCPU(usage.cpu.used)} / ${formatCPU(usage.cpu.cap)} · ${pct(usage.cpu.frac)}`));
-  else rows.push(missing('CPU', usage.cpu, formatCPU));
   if (usage.memory?.reported) rows.push(bar('Memory', usage.memory, `${formatBytes(usage.memory.used)} / ${formatBytes(usage.memory.cap)}`));
-  else rows.push(missing('Memory', usage.memory, formatBytes));
   const node = worker.node ? `<div class="node">on ${esc(worker.node)}</div>` : '';
-  return `<div class="name">${name}${state}</div>${node}<div class="meta">${agents}${usage.actors.cap ? '' : ' · capacity unknown'}</div>${rows.join('')}`;
+  return `<div class="name">${name}${state}</div>${node}<div class="meta">${meta || 'kube-agents'}</div>${rows.join('')}`;
 }
 
 const glowVertex = /* glsl */ `
@@ -223,6 +244,10 @@ export class WorkerPads {
       this.pads.set(p.name, p);
       this.write(p);
     });
+    // A single short row of pads (kube-agents' handful of agents): every
+    // other label drops a line, so neighbours' labels never collide.
+    const row = items.length <= STAGGER_MAX && items.every((it) => Math.abs(it.z - items[0].z) < 1e-6);
+    [...this.pads.values()].sort((a, b) => a.x - b.x).forEach((p, i) => (p.labelDrop = row && i % 2 ? LABEL_DROP : 0));
     for (const m of Object.values(this.mesh)) m.count = items.length * (m === this.mesh.track || m === this.mesh.fill ? BARS : 1);
     for (const [name, l] of this.labelOf) if (!this.pads.has(name)) this.hideLabel(name, l);
     this.ranges.pad.markAll();
@@ -373,7 +398,7 @@ export class WorkerPads {
     // A compact label sits in front of the pad; a card hangs below it, or
     // rises above it where agents stand in front of the pad (worker view).
     if (!strong) {
-      l.position.set(p.x, 0.2, p.z + PAD_D / 2 + 0.75);
+      l.position.set(p.x, 0.2, p.z + PAD_D / 2 + 0.75 + (p.labelDrop || 0));
       l.center?.set(0.5, 0.5);
     } else if (this.cardAbove) {
       l.position.set(p.x, 0.5, p.z - PAD_D / 2);

@@ -265,7 +265,9 @@ func buildWorkers(hub, namespace string, clusters []string, actors map[string][]
 	}
 	worker := func(name string, n int) model.Worker {
 		return model.Worker{
-			Name:            name,
+			Name: name,
+			// The pads take their titles from Pod.
+			Pod:             name,
 			Pool:            workerPool,
 			Namespace:       namespace,
 			Node:            hub,

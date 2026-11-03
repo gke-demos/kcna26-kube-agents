@@ -36,7 +36,7 @@ export function routerId(id) {
   return ROUTERS.some((r) => r.id === id) ? id : DEFAULT_ROUTER;
 }
 
-const LABEL = 'atenet router';
+const LABEL = 'Slack / A2A gateway';
 
 const swirlVertex = /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const swirlFragment = /* glsl */ `

@@ -15,13 +15,16 @@
 // Wires the stream, the model, the scene, the filters, the event feed and
 // the side panel together.
 
-import { Model, CLASSES, CLASS_LABEL, makeFilter, stateClass } from './model.js';
+import { Model, CLASSES, CLASS_LABEL, makeFilter, stateClass, isSignal } from './model.js';
 import { Stream, streamURL } from './stream.js';
 import { Scene, cssColor } from './scene.js';
 import { Panel } from './panel.js';
-import { esc, duration, since, clock, workerLabel, compact } from './format.js';
-import { describe } from './feed.js';
-import { SyntheticStream, syntheticDetail, syntheticRaw, syntheticOptions } from './synth.js';
+import { esc, duration, since, clock, workerLabel, compact, ago } from './format.js';
+import { describe, describeSignal, stateWords } from './feed.js';
+import { SyntheticStream, syntheticOptions } from './synth.js';
+import { FleetSynthStream } from './fleet-synth.js';
+import { ControlPanel, httpActions } from './controls.js';
+import { SIGNAL_ICON, SIGNAL_LABEL, signalColor } from './signals-ui.js';
 import { ThemePicker } from './theming.js';
 import { LookPicker, initialLooks, rememberGroup, rememberLayout, rememberBeams, storedDecks, storeDecks } from './looks.js';
 import { DECK_KEYS, layoutId, beamModeId, scrollModeId } from './decks.js';
@@ -31,7 +34,9 @@ import { ControlsTour } from './tour-ui.js';
 
 const $ = (sel) => document.querySelector(sel);
 /** Short state names for the header chips on narrower screens. */
-const CLASS_ABBR = { running: 'Run', transition: 'Chg', suspended: 'Susp', crashed: 'Crash', pending: 'Pend' };
+const CLASS_ABBR = { running: 'OK', transition: 'Roll', suspended: 'Zero', crashed: 'Fail', pending: 'Pend' };
+/** The header pill that always shows when the links carry it. */
+const SLACK_LINK = 'Slack #platform-ops';
 
 const model = new Model();
 const filterState = { atespace: '', classes: new Set(CLASSES), prefix: '' };
@@ -90,9 +95,12 @@ function updateCursor() {
   else if (hovered || hoverWorker) c = 'pointer';
   document.body.style.cursor = c;
 }
-// ?synthetic=N replaces the collector with N generated agents (scale checks
-// and design work without a cluster).
-const synthetic = Number(params.get('synthetic')) || 0;
+// ?synthetic=1 replaces the collector with the scripted demo fleet (and fake
+// action buttons); ?synthetic=N (N > 1) with N generated agents for scale
+// checks.
+const synthParam = params.get('synthetic');
+const synthetic = Number(synthParam) > 1 ? Number(synthParam) : 0;
+const fleetSynth = synthParam !== null && !synthetic && synthParam !== '0';
 scene.setFakeActivity(synthetic > 0);
 
 // Router look and agent shape: switch live, remembered.
@@ -111,22 +119,75 @@ const panel = new Panel($('#panel'), {
     scene.pinWorker(name);
     scene.flyToWorker(name);
   },
-  features: () => model.features,
-  detail: synthetic > 0 ? (key) => syntheticDetail(model.agents.get(key), model.workers) : undefined,
-  raw: synthetic > 0 ? (key) => syntheticRaw(model.agents.get(key), model.workers) : undefined,
+  agent: (key) => model.agents.get(key),
+  worker: (name) => model.workers.get(name),
+  signals: (key) => signalsFor(key),
+  iconStyle: (sig) => {
+    const c = signalColor(currentTheme || themes.theme, sig);
+    return `--c:${c};--ci:${inkOn(c)}`;
+  },
 });
 
+/** Paints a signal icon in the theme's color for its type. */
+function paintSignal(el, sig) {
+  const c = signalColor(currentTheme || themes.theme, sig);
+  el.style.setProperty('--c', c);
+  el.style.setProperty('--ci', inkOn(c));
+}
+let currentTheme = null;
+
 // Themes: switching re-colors the page (CSS variables), the scene, the open
-// panel and the state-colored feed icons.
+// panel and the state- and signal-colored feed icons.
 const themes = new ThemePicker($('#themes'), (t) => {
+  currentTheme = t;
   scene.setTheme(t);
-  if (selected) panel.show(selected);
+  if (selected) panel.agentChanged();
   document.querySelectorAll('#feed .item[data-state] .icon').forEach((el) => {
     const c = cssColor(el.closest('.item').dataset.state);
     el.style.setProperty('--c', c);
     el.style.setProperty('--ci', inkOn(c));
   });
+  document.querySelectorAll('[data-sig] > .icon').forEach((el) => paintSignal(el, el.parentElement.dataset.sig));
 }, { onTourStep: () => looks.tourStep() });
+
+// The control panel: only for users the collector lets press buttons.
+let stream = null;
+const controls = new ControlPanel($('#controls'), {
+  actions: () => (fleetSynth ? stream.actions() : httpActions.actions()),
+  runAction: (name, target) => (fleetSynth ? stream.runAction(name, target) : httpActions.runAction(name, target)),
+});
+
+// Header links (features.links): small pills that open in a new tab; the
+// Slack channel first.
+function renderLinks(links) {
+  const el = $('#links');
+  const list = [...(links || [])].filter((l) => l && l.url && /^https?:/i.test(l.url));
+  list.sort((a, b) => (b.name === SLACK_LINK) - (a.name === SLACK_LINK));
+  const html = list.map((l) => `<a class="pill${l.name === SLACK_LINK ? ' slack' : ''}" href="${esc(l.url)}" target="_blank" rel="noopener" title="${esc(l.url)}">${esc(l.name)} <span class="ext">↗</span></a>`).join('');
+  if (el.innerHTML !== html) el.innerHTML = html;
+}
+
+// ----------------------------------------------------------------- signals
+
+// Signals seen (newest first), for the panel's incident list; ids already
+// in the feed, so a reconnect's snapshot doesn't repeat them.
+const SIGNALS_MAX = 300;
+const signals = [];
+const signalSeen = new Set();
+
+function signalsFor(key) {
+  return signals.filter((s) => s.key === key);
+}
+
+/** Records a signal line and feeds it; false when the feed already has it. */
+function addSignal(item) {
+  if (signalSeen.has(item.id)) return false;
+  signalSeen.add(item.id);
+  signals.unshift(item);
+  if (signals.length > SIGNALS_MAX) signalSeen.delete(signals.pop().id);
+  feed(item);
+  return true;
+}
 
 // ------------------------------------------------------------------ stream
 
@@ -142,11 +203,16 @@ const streamHandlers = {
     if (resync) feed({ type: 'meta', text: 'resynced from a fresh snapshot' });
     else {
       const c = model.counts();
-      feed({ type: 'meta', text: `connected to <b>${esc(model.cluster)}</b>: ${model.agents.size} agents, ${c.running} running, ${c.suspended} suspended` });
+      feed({ type: 'meta', text: `connected to <b>${esc(model.cluster)}</b>: ${model.agents.size} workloads on ${model.atespaces.size} clusters, ${c.running} healthy${c.crashed ? `, ${c.crashed} failing` : ''}` });
     }
+    // The latest signals, oldest first: into the feed without replaying
+    // their effects (the ones already shown are skipped).
+    for (const e of model.recent) if (isSignal(e)) addSignal(describeSignal(e));
+    controls.setEnabled(model.features?.actions);
+    renderLinks(model.features?.links);
     refreshChrome(true);
     if (selected && !model.agents.has(selected)) select(null);
-    else if (selected) panel.show(selected);
+    else if (selected) panel.agentChanged();
     const want = initialSelection();
     if (want && !selected && model.agents.has(want)) select(want, true);
   },
@@ -154,17 +220,26 @@ const streamHandlers = {
     if (!model.applyEvents(events)) return false;
     for (const e of events) eventCounts[e.type] = (eventCounts[e.type] || 0) + 1;
     scene.applyEvents(events);
-    queueFeed(describe(events));
+    const lines = describe(events);
+    // Signals go straight in (they are few and they are the story);
+    // workload changes are batched.
+    let sigs = false;
+    for (const l of lines) if (l.type === 'signal') sigs = addSignal(l) || sigs;
+    queueFeed(lines.filter((l) => l.type !== 'signal'));
     refreshChrome();
     if (selected) {
       const a = model.agents.get(selected);
       if (!a) select(null);
-      else if (events.some((e) => e.key === selected)) panel.agentChanged(a);
+      else if (events.some((e) => e.key === selected && !isSignal(e))) panel.agentChanged(a);
+      if (sigs) panel.signalsChanged();
     }
     return true;
   },
 };
-const stream = synthetic > 0 ? new SyntheticStream(synthetic, streamHandlers, syntheticOptions(params)) : new Stream(streamURL(), streamHandlers);
+// &incident=N starts the first scripted incident after N seconds (default 4).
+if (fleetSynth) stream = new FleetSynthStream(streamHandlers, params.has('incident') ? { first: Math.max(0, Number(params.get('incident')) || 0) } : {});
+else if (synthetic > 0) stream = new SyntheticStream(synthetic, streamHandlers, syntheticOptions(params));
+else stream = new Stream(streamURL(), streamHandlers);
 
 function initialSelection() {
   const m = /[#&]agent=([^&]+)/.exec(window.location.hash);
@@ -267,8 +342,8 @@ function hoverTile(tile, info) {
   tip.style.top = `${at.y + 14}px`;
   tip.innerHTML =
     tile.kind === 'atespace'
-      ? `<div class="t-name">atespace <b>${esc(tile.name)}</b></div><div>${compact(info.total)} agents · ${compact(info.agents)} on workers</div><div class="muted">flowing to ${info.ends} node pool${info.ends === 1 ? '' : 's'}</div>`
-      : `<div class="t-name">node pool <b>${esc(tile.name)}</b></div><div>${compact(info.workers)} workers · ${compact(info.agents)} agents</div><div class="muted">from ${info.ends} atespace${info.ends === 1 ? '' : 's'}</div>`;
+      ? `<div class="t-name">cluster <b>${esc(tile.name)}</b></div><div>${compact(info.total)} workloads · ${compact(info.agents)} watched</div>`
+      : `<div class="t-name"><b>${esc(tile.name)}</b></div><div>${compact(info.workers)} agents · watching ${compact(info.agents)} workloads</div><div class="muted">in ${info.ends} cluster${info.ends === 1 ? '' : 's'}</div>`;
 }
 let hovered = null;
 function hover(key, x, y) {
@@ -282,12 +357,12 @@ function hover(key, x, y) {
   tip.style.display = 'block';
   tip.style.left = `${x + 14}px`;
   tip.style.top = `${y + 14}px`;
-  const reason = a.task?.conditions?.find((c) => c.type === 'Ready')?.reason;
   const wk = a.worker && model.workers.get(a.worker);
+  const replicas = a.replicas || a.ready ? ` · ${a.ready ?? 0}/${a.replicas ?? 0} ready` : '';
   tip.innerHTML = `<div class="t-name">${esc(a.atespace)}/<b>${esc(a.name)}</b></div>
-    <div><span class="dot" style="background:${cssColor(a.state)}"></span>${esc(a.state.toLowerCase())} for ${duration(since(a.stateSince))}</div>
-    ${a.worker ? `<div class="muted">on ${esc(wk ? workerLabel(wk) : a.worker)}</div>` : ''}
-    ${a.task ? `<div class="muted">ax ${esc(a.task.phase || '')}${reason ? ' · ' + esc(reason) : ''}</div>` : ''}`;
+    <div><span class="dot" style="background:${cssColor(a.state)}"></span>${esc(stateWords(a))} for ${duration(since(a.stateSince))}</div>
+    ${a.kind || a.namespace ? `<div class="muted">${esc(a.kind || 'workload')}${a.namespace ? ` in ${esc(a.namespace)}` : ''}${replicas}</div>` : ''}
+    ${a.worker ? `<div class="muted">watched by ${esc(wk ? workerLabel(wk) : a.worker)}</div>` : ''}`;
 }
 
 // ----------------------------------------------------------------- filters
@@ -381,17 +456,21 @@ function refreshChrome(now = false) {
   $('#cluster').textContent = model.cluster || '';
   const counts = model.counts();
   // Counts stay short (12.3k) so the header keeps to one row at 100,000 agents.
-  $('#legend').innerHTML = CLASSES.map(
+  // Healthy and failing always show; the other states only while some
+  // workload is in them (or their filter is off), so the header keeps room
+  // for the link pills.
+  const legendClasses = CLASSES.filter((c) => c === 'running' || c === 'crashed' || counts[c] > 0 || !filterState.classes.has(c));
+  $('#legend').innerHTML = legendClasses.map(
     (c) => `<button class="chip ${c}${filterState.classes.has(c) ? '' : ' off'}" data-cls="${c}" title="${CLASS_LABEL[c]}: ${counts[c].toLocaleString('en-US')}. Click to toggle, shift-click to show only this">
       <span class="sw"></span><span class="lbl">${CLASS_LABEL[c]}</span><span class="ab">${CLASS_ABBR[c]}</span><b>${compact(counts[c])}</b></button>`,
   ).join('');
-  $('#total').textContent = `${model.agents.size} agents · ${model.atespaces.size} atespaces · ${model.workers.size} workers`;
+  $('#total').textContent = `${model.agents.size} workloads · ${model.atespaces.size} clusters · ${model.workers.size} kube-agents agents`;
   const sel = $('#atespace');
   const names = [...model.atespaces.keys()].sort();
   const want = ['', ...names].join('|');
   if (sel.dataset.names !== want) {
     sel.dataset.names = want;
-    sel.innerHTML = `<option value="">All atespaces</option>${names.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}`;
+    sel.innerHTML = `<option value="">All clusters</option>${names.map((n) => `<option value="${esc(n)}">${esc(n)}</option>`).join('')}`;
     sel.value = filterState.atespace;
   }
   const bad = (model.sources || []).filter((s) => !s.ok);
@@ -417,7 +496,7 @@ function feedCollapsed() {
 function setFeedCollapsed(on) {
   document.body.classList.toggle('feed-collapsed', on);
   try {
-    localStorage.setItem('substrate-scope:feed-collapsed', on ? '1' : '0');
+    localStorage.setItem('fleet-scope:feed-collapsed', on ? '1' : '0');
   } catch {
     /* storage blocked: still works for this page */
   }
@@ -462,25 +541,42 @@ function flushFeed() {
   const keep = [...crashed.slice(-FEED_BURST / 2), ...q.filter((i) => i.type !== 'crashed' && i.type !== 'worker').slice(-FEED_BURST)].slice(-FEED_BURST);
   const n = {};
   for (const i of q) n[i.type] = (n[i.type] || 0) + 1;
-  const parts = [['woke', 'woke'], ['suspended', 'suspended'], ['crashed', 'crashed'], ['added', 'added'], ['removed', 'removed'], ['state', 'changed state'], ['worker', 'worker updates']]
+  const parts = [['woke', 'scaled up'], ['suspended', 'scaled to 0'], ['crashed', 'failing'], ['added', 'added'], ['removed', 'removed'], ['state', 'changed health'], ['worker', 'agent updates']]
     .filter(([k]) => n[k])
     .map(([k, label]) => `${n[k]} ${label}`);
   feed({ type: 'meta', text: `${q.length - keep.length} more events: ${parts.join(', ')}` });
   keep.forEach(feed);
 }
 
+/** A signal's feed line: icon, title, actor, relative time, and a ↗ to Slack or GitHub. */
+function signalLine(div, item) {
+  div.className = `item signal sig-${item.sig}${item.thread && item.sig !== 'alert' ? ' reply' : ''}${item.failed ? ' failed' : ''}`;
+  div.dataset.sig = item.sig;
+  const name = item.key.split('/').slice(1).join('/');
+  const where = name && !item.title.includes(name) ? `<b>${esc(name)}</b>: ` : '';
+  const link = item.link ? ` <a class="ext" href="${esc(item.link)}" target="_blank" rel="noopener" title="Open in a new tab">↗</a>` : '';
+  const t = item.time || new Date().toISOString();
+  div.innerHTML = `<span class="icon" title="${esc(SIGNAL_LABEL[item.sig] || item.sig)}">${SIGNAL_ICON[item.sig] || '•'}</span>
+    <span class="body"><span class="txt">${where}${item.text}${link}</span><span class="ts">${item.actor ? `<span class="who">${esc(item.actor)}</span> · ` : ''}<span data-ago="${esc(t)}" title="${esc(new Date(t).toLocaleString())}">${esc(ago(t))}</span></span></span>`;
+  paintSignal(div.querySelector('.icon'), item.sig);
+  div.querySelector('a.ext')?.addEventListener('click', (e) => e.stopPropagation());
+}
+
 function feed(item) {
   const div = document.createElement('div');
-  const type = FEED_ICON[item.type] ? item.type : 'meta';
-  div.className = `item ${type}`;
-  const now = new Date();
-  const color = type === 'state' && item.state ? cssColor(item.state) : '';
-  if (color) div.dataset.state = item.state;
-  div.innerHTML = `<span class="icon"${color ? ` style="--c:${color};--ci:${inkOn(color)}"` : ''}>${FEED_ICON[type]}</span>
-    <span class="body"><span class="txt">${item.text}</span><span class="ts" title="${esc(now.toLocaleString())}">${clock(now.toISOString())}</span></span>`;
+  if (item.type === 'signal') signalLine(div, item);
+  else {
+    const type = FEED_ICON[item.type] ? item.type : 'meta';
+    div.className = `item ${type}`;
+    const now = new Date();
+    const color = type === 'state' && item.state ? cssColor(item.state) : '';
+    if (color) div.dataset.state = item.state;
+    div.innerHTML = `<span class="icon"${color ? ` style="--c:${color};--ci:${inkOn(color)}"` : ''}>${FEED_ICON[type]}</span>
+      <span class="body"><span class="txt">${item.text}</span><span class="ts" title="${esc(now.toLocaleString())}">${clock(now.toISOString())}</span></span>`;
+  }
   if (item.key) {
     div.classList.add('link');
-    div.title = 'Select and fly to this agent';
+    div.title = 'Select and fly to this workload';
     div.addEventListener('click', () => model.agents.has(item.key) && select(item.key, true));
   }
   // Newest on top. If the user has scrolled down to read older events,
@@ -490,15 +586,23 @@ function feed(item) {
   if (keep) feedEl.scrollTop += div.offsetHeight;
   while (feedEl.children.length > FEED_MAX) feedEl.lastChild.remove();
   feedTotal++;
-  if (feedCollapsed() && type !== 'meta') feedUnread++;
+  if (feedCollapsed() && item.type !== 'meta') feedUnread++;
   updateFeedCounts();
 }
+
+// Relative times ("5m ago") in the feed stay current.
+setInterval(() => {
+  for (const t of feedEl.querySelectorAll('[data-ago]')) {
+    const s = ago(t.dataset.ago);
+    if (t.textContent !== s) t.textContent = s;
+  }
+}, 5000);
 
 scene.setLeftInset(feedInset());
 $('#feed-collapse').addEventListener('click', () => setFeedCollapsed(true));
 $('#feed-tab').addEventListener('click', () => setFeedCollapsed(false));
 try {
-  if (localStorage.getItem('substrate-scope:feed-collapsed') === '1') setFeedCollapsed(true);
+  if (localStorage.getItem('fleet-scope:feed-collapsed') === '1') setFeedCollapsed(true);
 } catch {
   /* storage blocked */
 }
@@ -511,7 +615,7 @@ function setLabelMode(mode) {
   $('#labels').textContent = `Labels: ${mode}`;
   $('#labels').dataset.mode = mode;
   try {
-    localStorage.setItem('substrate-scope:labels', mode);
+    localStorage.setItem('fleet-scope:labels', mode);
   } catch {
     /* storage blocked */
   }
@@ -522,7 +626,7 @@ function cycleLabels() {
 }
 $('#labels').addEventListener('click', cycleLabels);
 try {
-  setLabelMode(localStorage.getItem('substrate-scope:labels') || 'auto');
+  setLabelMode(localStorage.getItem('fleet-scope:labels') || 'auto');
 } catch {
   setLabelMode('auto');
 }
@@ -553,7 +657,7 @@ const perf = new PerfOverlay(
 );
 // Scroll: auto (wheel zooms, trackpad scroll pans), zoom (every scroll zooms,
 // Shift+scroll pans; for a Magic Mouse), or pan. ?scroll= overrides; remembered.
-const SCROLL_KEY = 'substrate-scope:scroll';
+const SCROLL_KEY = 'fleet-scope:scroll';
 function setScroll(mode, remember = true) {
   const m = scrollModeId(mode);
   scene.gestures.wheel.mode = m;

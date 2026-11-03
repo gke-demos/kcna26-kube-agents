@@ -357,7 +357,7 @@ export function buildWorkerDeck(group, deck, theme, opts) {
   group.add(rimLine(shape, 64, deck.cx, 0.05, deck.cz, fading(rimMaterial(theme.worker.padEdge, 1, opts.blending), theme.island.edgeAlpha)));
   // The deck's name along its front edge.
   const nameSize = Math.min(1.3 * Math.max(1, deck.width / 120), 6);
-  const name = opts.makeText('workers', { size: nameSize, color: theme.island.label });
+  const name = opts.makeText('kube-agents', { size: nameSize, color: theme.island.label });
   fading(name.material, 0.6);
   const nameW = name.geometry.parameters?.width ?? 0;
   name.position.set(deck.cx - deck.width / 2 + 2 + nameW / 2, 0.03, deck.cz + deck.depth / 2 - 1.1 - (nameSize - 1.3) / 2);

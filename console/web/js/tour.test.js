@@ -32,7 +32,10 @@ function interactionRows() {
     .map((l) => l.split('|')[1].trim());
 }
 
-test('the tour shows every control in the Interaction table', () => {
+// fleet-scope doesn't carry substrate-scope's docs/design.md.
+const hasDesign = fs.existsSync(new URL('../../docs/design.md', import.meta.url));
+
+test('the tour shows every control in the Interaction table', { skip: !hasDesign && 'no docs/design.md in this repo' }, () => {
   const rows = interactionRows();
   assert.ok(rows.length >= 12, `found ${rows.length} rows`);
   const covered = new Set(STEPS.flatMap((s) => s.covers));
