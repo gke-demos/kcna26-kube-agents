@@ -296,6 +296,8 @@ func (s *Server) runAction(w http.ResponseWriter, r *http.Request, who string) {
 	ev := model.Event{Type: model.EventAction, Title: title, Link: link, Actor: who, Reason: name}
 	if err != nil {
 		slog.Warn("action failed", "action", name, "target", req.Target, "by", who, "err", err)
+		// A partial failure (reset committed, a PR close failed) still has a
+		// link worth keeping.
 		ev.Title = name + " failed: " + err.Error()
 		ev.Message = "failed"
 		s.o.Store.Emit(ev)

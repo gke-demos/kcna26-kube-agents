@@ -96,9 +96,11 @@ func main() {
 		Source:   "fleet",
 		Features: model.Features{Links: parseLinks(*links)},
 	})
+	// Always a key: at startup the signal pollers' first load can run before
+	// the fleet source has drawn anything, and the front end skips effects
+	// for workloads it isn't drawing anyway.
 	resolve := func(cluster, name string) (string, bool) {
-		_, ok := store.Agent(cluster, name)
-		return model.Key(cluster, name), ok
+		return model.Key(cluster, name), cluster != "" && name != ""
 	}
 
 	run := func(name string, f func(context.Context) error) {

@@ -1,0 +1,2269 @@
+{
+  "messages": [
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793653212.247929",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":large_green_circle: *k8s-event-watcher Daily Activity Recap* — `kube-agents-hub` +1 cluster (2026-11-02, last 72h)\n_One ledger serves every watched cluster, so every count below covers `boutique-prod` as well as `kube-agents-hub`._\n• *Events Forwarded:* 3\n• *Workload/Reason Groups:* 2\n• *Alerts Raised:* 3\n_Namespaces in `EOD_EXCLUDE_NAMESPACES` are outside this recap's scope._\n\n:white_check_mark: _Nothing was held back from chat in this window. This reports the ledger, not the watcher: confirm the daemon is running before reading a quiet day as a healthy one._\n\n:chart_with_downwards_trend: _*0 informational events* held back from chat in this window, across every workload counted here._",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "mSol3",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "large_green_circle",
+                  "unicode": "1f7e2"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "k8s-event-watcher Daily Activity Recap",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "text": "kube-agents-hub",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " +1 cluster (2026-11-02, last 72h)\n"
+                },
+                {
+                  "type": "text",
+                  "text": "One ledger serves every watched cluster, so every count below covers ",
+                  "style": {
+                    "italic": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "boutique-prod",
+                  "style": {
+                    "italic": true,
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " as well as ",
+                  "style": {
+                    "italic": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "kube-agents-hub",
+                  "style": {
+                    "italic": true,
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": ".",
+                  "style": {
+                    "italic": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "\n• "
+                },
+                {
+                  "type": "text",
+                  "text": "Events Forwarded:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " 3\n• "
+                },
+                {
+                  "type": "text",
+                  "text": "Workload/Reason Groups:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " 2\n• "
+                },
+                {
+                  "type": "text",
+                  "text": "Alerts Raised:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " 3\n"
+                },
+                {
+                  "type": "text",
+                  "text": "Namespaces in ",
+                  "style": {
+                    "italic": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "EOD_EXCLUDE_NAMESPACES",
+                  "style": {
+                    "italic": true,
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " are outside this recap's scope.",
+                  "style": {
+                    "italic": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "\n\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "white_check_mark",
+                  "unicode": "2705"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Nothing was held back from chat in this window. This reports the ledger, not the watcher: confirm the daemon is running before reading a quiet day as a healthy one.",
+                  "style": {
+                    "italic": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "\n\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "chart_with_downwards_trend",
+                  "unicode": "1f4c9"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "0 informational events",
+                  "style": {
+                    "bold": true,
+                    "italic": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " held back from chat in this window, across every workload counted here.",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793645585.112429",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "*Upgrade Retrospective: 13 minor findings* `minor` Unclassified: OOMKilling on Node/gke-bank-prod-default-pool-662736ad-9kt6 `minor` Unclassified: Readiness Probe Failed on Deployment/contacts 11 more (11 minor) are in the ledger issue. <https://github.com/gke-demos/kcna26-fleet-gitops/issues/6|Ledger issue #6 :arrow_upper_right:>",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "kNIwN",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "Upgrade Retrospective: 13 minor findings",
+                  "style": {
+                    "bold": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "divider",
+          "block_id": "xNf1T"
+        },
+        {
+          "type": "rich_text",
+          "block_id": "Xwbw+",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "minor",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Unclassified: OOMKilling on Node/gke-bank-prod-default-pool-662736ad-9kt6"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "minor",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Unclassified: Readiness Probe Failed on Deployment/contacts"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "divider",
+          "block_id": "3JmeU"
+        },
+        {
+          "type": "rich_text",
+          "block_id": "UJbXr",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "11 more (11 minor) are in the ledger issue."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "actions",
+          "block_id": "mH0Sv",
+          "elements": [
+            {
+              "type": "button",
+              "action_id": "kage.choice.0",
+              "text": {
+                "type": "plain_text",
+                "text": "Look at the first one",
+                "emoji": true
+              },
+              "style": "primary",
+              "value": "Look at the first one"
+            },
+            {
+              "type": "button",
+              "action_id": "kage.link.0",
+              "text": {
+                "type": "plain_text",
+                "text": "Ledger issue #6 :arrow_upper_right:",
+                "emoji": true
+              },
+              "url": "https://github.com/gke-demos/kcna26-fleet-gitops/issues/6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793645106.129949",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":large_yellow_circle: *Warning:* Failed `kube-system/gke-metrics-agent` — Error: host IP unknown; known addresses: [{Hostname gk3-kube-agents-hub-nap-2tt0usu1-d4adc126-jbsd}]\n:seedling: _Digging down to the root cause..._",
+      "thread_ts": "1793645106.129949",
+      "reply_count": 5,
+      "reply_users_count": 1,
+      "latest_reply": "1793646033.042589",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "H+J",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "large_yellow_circle",
+                  "unicode": "1f7e1"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Warning:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Failed "
+                },
+                {
+                  "type": "text",
+                  "text": "kube-system/gke-metrics-agent",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " — Error: host IP unknown; known addresses: [{Hostname gk3-kube-agents-hub-nap-2tt0usu1-d4adc126-jbsd}]\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Digging down to the root cause...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793644982.692209",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "*Workload Reliability Audit: 1 critical finding* `critical` blocking-pdb on PodDisruptionBudget/ledger-db 59 more (22 major, 37 minor) are in the ledger issue. <https://github.com/gke-demos/kcna26-fleet-gitops/issues/4|Ledger issue #4 :arrow_upper_right:>",
+      "thread_ts": "1793644982.692209",
+      "reply_count": 3,
+      "reply_users_count": 1,
+      "latest_reply": "1793645341.051979",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "PNePj",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "Workload Reliability Audit: 1 critical finding",
+                  "style": {
+                    "bold": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "divider",
+          "block_id": "r9Ezv"
+        },
+        {
+          "type": "rich_text",
+          "block_id": "1cePP",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "critical",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "blocking-pdb on PodDisruptionBudget/ledger-db"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "divider",
+          "block_id": "zQHB2"
+        },
+        {
+          "type": "rich_text",
+          "block_id": "ropNo",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "59 more (22 major, 37 minor) are in the ledger issue."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "actions",
+          "block_id": "Parlr",
+          "elements": [
+            {
+              "type": "button",
+              "action_id": "kage.choice.0",
+              "text": {
+                "type": "plain_text",
+                "text": "Look at the first one",
+                "emoji": true
+              },
+              "style": "primary",
+              "value": "Look at the first one"
+            },
+            {
+              "type": "button",
+              "action_id": "kage.link.0",
+              "text": {
+                "type": "plain_text",
+                "text": "Ledger issue #4 :arrow_upper_right:",
+                "emoji": true
+              },
+              "url": "https://github.com/gke-demos/kcna26-fleet-gitops/issues/4"
+            }
+          ]
+        }
+      ],
+      "agent_session": {
+        "status": "closed",
+        "agent_bot_user_ids": [
+          "U0CE6TMT88H"
+        ],
+        "agent_statuses": [
+          {
+            "agent_bot_user_id": "U0CE6TMT88H",
+            "status": "closed",
+            "is_stoppable": true
+          }
+        ]
+      }
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793644208.050229",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "*Security &amp; RBAC Posture Audit: 4 critical findings* `critical` public-control-plane on Cluster/bank-prod `critical` cluster-admin-binding on ClusterRoleBinding/bank-of-anthos-debug-access `critical` public-control-plane on Cluster/boutique-prod `critical` public-control-plane on Cluster/kube-agents-hub 33 more (11 major, 22 minor) are in the ledger issue. <https://github.com/gke-demos/kcna26-fleet-gitops/issues/3|Ledger issue #3 :arrow_upper_right:>",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "JLjV6",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "Security & RBAC Posture Audit: 4 critical findings",
+                  "style": {
+                    "bold": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "divider",
+          "block_id": "j8D0S"
+        },
+        {
+          "type": "rich_text",
+          "block_id": "QJpEf",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "critical",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "public-control-plane on Cluster/bank-prod"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "critical",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "cluster-admin-binding on ClusterRoleBinding/bank-of-anthos-debug-access"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "critical",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "public-control-plane on Cluster/boutique-prod"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "critical",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "public-control-plane on Cluster/kube-agents-hub"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "divider",
+          "block_id": "MBGfi"
+        },
+        {
+          "type": "rich_text",
+          "block_id": "eAVs+",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "33 more (11 major, 22 minor) are in the ledger issue."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "actions",
+          "block_id": "603Pt",
+          "elements": [
+            {
+              "type": "button",
+              "action_id": "kage.choice.0",
+              "text": {
+                "type": "plain_text",
+                "text": "Look at the first one",
+                "emoji": true
+              },
+              "style": "primary",
+              "value": "Look at the first one"
+            },
+            {
+              "type": "button",
+              "action_id": "kage.link.0",
+              "text": {
+                "type": "plain_text",
+                "text": "Ledger issue #3 :arrow_upper_right:",
+                "emoji": true
+              },
+              "url": "https://github.com/gke-demos/kcna26-fleet-gitops/issues/3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793643837.425189",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "*Fleet Waste Audit: 16 minor findings* `minor` overrequest on Deployment/loadgenerator `minor` overrequest on StatefulSet/accounts-db 14 more (14 minor) are in the ledger issue. <https://github.com/gke-demos/kcna26-fleet-gitops/issues/2|Ledger issue #2 :arrow_upper_right:>",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "MPwA+",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "Fleet Waste Audit: 16 minor findings",
+                  "style": {
+                    "bold": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "divider",
+          "block_id": "7ei47"
+        },
+        {
+          "type": "rich_text",
+          "block_id": "fnBQJ",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "minor",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "overrequest on Deployment/loadgenerator"
+                }
+              ]
+            },
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "minor",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "overrequest on StatefulSet/accounts-db"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "divider",
+          "block_id": "Q0fBu"
+        },
+        {
+          "type": "rich_text",
+          "block_id": "5U6EH",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "14 more (14 minor) are in the ledger issue."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "actions",
+          "block_id": "ixdAz",
+          "elements": [
+            {
+              "type": "button",
+              "action_id": "kage.choice.0",
+              "text": {
+                "type": "plain_text",
+                "text": "Look at the first one",
+                "emoji": true
+              },
+              "style": "primary",
+              "value": "Look at the first one"
+            },
+            {
+              "type": "button",
+              "action_id": "kage.link.0",
+              "text": {
+                "type": "plain_text",
+                "text": "Ledger issue #2 :arrow_upper_right:",
+                "emoji": true
+              },
+              "url": "https://github.com/gke-demos/kcna26-fleet-gitops/issues/2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subtype": "channel_join",
+      "user": "U0CE89JDMQC",
+      "text": "<@U0CE89JDMQC> has joined the channel",
+      "type": "message",
+      "ts": "1793642155.254589"
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641808.988429",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":rotating_light: *recommendationservice in boutique-prod keeps crashing.* Looking now.",
+      "thread_ts": "1793641808.988429",
+      "reply_count": 10,
+      "reply_users_count": 1,
+      "latest_reply": "1793644833.068039",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "6UDnN",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "rotating_light",
+                  "unicode": "1f6a8"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "recommendationservice in boutique-prod keeps crashing.",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Looking now."
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "agent_session": {
+        "status": "closed",
+        "agent_bot_user_ids": [
+          "U0CE6TMT88H"
+        ],
+        "agent_statuses": [
+          {
+            "agent_bot_user_id": "U0CE6TMT88H",
+            "status": "closed",
+            "is_stoppable": true
+          }
+        ]
+      }
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641356.364879",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":twisted_rightwards_arrows: *Drift:* <mailto:garisingh@google.com|garisingh@google.com> deleted kubeagents-system/pods/platform-agent-gateway-7889dd8cc8-kcg9j on cluster kube-agents-hub (field ownership not read: no_object)\n:seedling: _Checking what the cluster looks like now..._",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "CZ1lZ",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "twisted_rightwards_arrows",
+                  "unicode": "1f500"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Drift:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "link",
+                  "url": "mailto:garisingh@google.com",
+                  "text": "garisingh@google.com"
+                },
+                {
+                  "type": "text",
+                  "text": " deleted kubeagents-system/pods/platform-agent-gateway-7889dd8cc8-kcg9j on cluster kube-agents-hub (field ownership not read: no_object)\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Checking what the cluster looks like now...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641354.084529",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":large_yellow_circle: *Warning:* Failed `kube-system/netd` — Error: services have not yet been read at least once, cannot construct envvars\n:seedling: _Digging down to the root cause..._",
+      "thread_ts": "1793641354.084529",
+      "reply_count": 1,
+      "reply_users_count": 1,
+      "latest_reply": "1793642283.194449",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "mWI",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "large_yellow_circle",
+                  "unicode": "1f7e1"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Warning:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Failed "
+                },
+                {
+                  "type": "text",
+                  "text": "kube-system/netd",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " — Error: services have not yet been read at least once, cannot construct envvars\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Digging down to the root cause...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641353.987159",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":large_yellow_circle: *Warning:* Failed `kube-system/fluentbit-gke` — Error: services have not yet been read at least once, cannot construct envvars\n:seedling: _Digging down to the root cause..._",
+      "thread_ts": "1793641353.987159",
+      "reply_count": 1,
+      "reply_users_count": 1,
+      "latest_reply": "1793642283.652539",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "OEf8P",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "large_yellow_circle",
+                  "unicode": "1f7e1"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Warning:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Failed "
+                },
+                {
+                  "type": "text",
+                  "text": "kube-system/fluentbit-gke",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " — Error: services have not yet been read at least once, cannot construct envvars\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Digging down to the root cause...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641353.878199",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":large_yellow_circle: *Warning:* Failed `kube-system/gke-metrics-agent` — Error: services have not yet been read at least once, cannot construct envvars\n:seedling: _Digging down to the root cause..._",
+      "thread_ts": "1793641353.878199",
+      "reply_count": 1,
+      "reply_users_count": 1,
+      "latest_reply": "1793642283.460449",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "Ez3+",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "large_yellow_circle",
+                  "unicode": "1f7e1"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Warning:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Failed "
+                },
+                {
+                  "type": "text",
+                  "text": "kube-system/gke-metrics-agent",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " — Error: services have not yet been read at least once, cannot construct envvars\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Digging down to the root cause...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641353.766189",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":large_yellow_circle: *Warning:* Failed `kube-system/gke-metadata-server` — Error: services have not yet been read at least once, cannot construct envvars\n:seedling: _Digging down to the root cause..._",
+      "thread_ts": "1793641353.766189",
+      "reply_count": 1,
+      "reply_users_count": 1,
+      "latest_reply": "1793642283.375779",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "YC3qA",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "large_yellow_circle",
+                  "unicode": "1f7e1"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Warning:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Failed "
+                },
+                {
+                  "type": "text",
+                  "text": "kube-system/gke-metadata-server",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " — Error: services have not yet been read at least once, cannot construct envvars\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Digging down to the root cause...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641353.688579",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":large_yellow_circle: *Warning:* Failed `kube-system/filestore-node` — Error: services have not yet been read at least once, cannot construct envvars\n:seedling: _Digging down to the root cause..._",
+      "thread_ts": "1793641353.688579",
+      "reply_count": 1,
+      "reply_users_count": 1,
+      "latest_reply": "1793642283.288839",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "M=R",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "large_yellow_circle",
+                  "unicode": "1f7e1"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Warning:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Failed "
+                },
+                {
+                  "type": "text",
+                  "text": "kube-system/filestore-node",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " — Error: services have not yet been read at least once, cannot construct envvars\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Digging down to the root cause...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641353.611459",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":large_yellow_circle: *Warning:* Failed `kube-system/pdcsi-node` — Error: services have not yet been read at least once, cannot construct envvars\n:seedling: _Digging down to the root cause..._",
+      "thread_ts": "1793641353.611459",
+      "reply_count": 1,
+      "reply_users_count": 1,
+      "latest_reply": "1793642283.551449",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "rbDt",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "large_yellow_circle",
+                  "unicode": "1f7e1"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Warning:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Failed "
+                },
+                {
+                  "type": "text",
+                  "text": "kube-system/pdcsi-node",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " — Error: services have not yet been read at least once, cannot construct envvars\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Digging down to the root cause...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641353.532959",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":large_yellow_circle: *Warning:* Failed `kube-system/node-local-dns` — Error: services have not yet been read at least once, cannot construct envvars\n:seedling: _Digging down to the root cause..._",
+      "thread_ts": "1793641353.532959",
+      "reply_count": 1,
+      "reply_users_count": 1,
+      "latest_reply": "1793642283.105709",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "YH0c",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "large_yellow_circle",
+                  "unicode": "1f7e1"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Warning:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Failed "
+                },
+                {
+                  "type": "text",
+                  "text": "kube-system/node-local-dns",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " — Error: services have not yet been read at least once, cannot construct envvars\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Digging down to the root cause...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641164.974839",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":wrench: *Cluster Agent reconcile*\n  :heavy_plus_sign: created 3 profile(s): `cluster-kcna-2026-demos-bank-prod-us-central1-b`, `cluster-kcna-2026-demos-boutique-prod-us-central1-b`, `cluster-kcna-2026-demos-kube-agents-hub-us-central1`",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "4Gp",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "wrench",
+                  "unicode": "1f527"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Cluster Agent reconcile",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "\n  "
+                },
+                {
+                  "type": "emoji",
+                  "name": "heavy_plus_sign",
+                  "unicode": "2795"
+                },
+                {
+                  "type": "text",
+                  "text": " created 3 profile(s): "
+                },
+                {
+                  "type": "text",
+                  "text": "cluster-kcna-2026-demos-bank-prod-us-central1-b",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "cluster-kcna-2026-demos-boutique-prod-us-central1-b",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "cluster-kcna-2026-demos-kube-agents-hub-us-central1",
+                  "style": {
+                    "code": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641153.174179",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":card_index_dividers: *Drift backlog:* 97 changes reached drift detection late (they queued before it started pulling, or waited over 30 minutes), so they are listed here instead of triaged one card each.\nBy principal: <mailto:garisingh@google.com|garisingh@google.com> (54), garisingh@gke.ninja (43)\nIncluding: kubeagents-system/podmonitorings/platform-agent-credential-proxy-monitoring on kube-agents-hub, kubeagents-system/secrets/sh.helm.release.v1.kube-agents.v1 on kube-agents-hub, kubeagents-system/platformagents/platform-agent on kube-agents-hub, kubeagents-system/roles/kube-agents-operator-leader-election-role on kube-agents-hub, validatingadmissionpolicies/kube-agents-agent-binding-scope on kube-agents-hub, and 92 more\nRecorded 2026-11-02 17:37:49 to 2026-11-02 17:38:13 UTC. The full list is the `backlog` rows of `GET /v1/intercepted-events` on the Session KV server.",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "tIF",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "card_index_dividers",
+                  "unicode": "1f5c2-fe0f"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Drift backlog:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " 97 changes reached drift detection late (they queued before it started pulling, or waited over 30 minutes), so they are listed here instead of triaged one card each.\nBy principal: "
+                },
+                {
+                  "type": "link",
+                  "url": "mailto:garisingh@google.com",
+                  "text": "garisingh@google.com"
+                },
+                {
+                  "type": "text",
+                  "text": " (54), garisingh@gke.ninja (43)\nIncluding: kubeagents-system/podmonitorings/platform-agent-credential-proxy-monitoring on kube-agents-hub, kubeagents-system/secrets/sh.helm.release.v1.kube-agents.v1 on kube-agents-hub, kubeagents-system/platformagents/platform-agent on kube-agents-hub, kubeagents-system/roles/kube-agents-operator-leader-election-role on kube-agents-hub, validatingadmissionpolicies/kube-agents-agent-binding-scope on kube-agents-hub, and 92 more\nRecorded 2026-11-02 17:37:49 to 2026-11-02 17:38:13 UTC. The full list is the "
+                },
+                {
+                  "type": "text",
+                  "text": "backlog",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " rows of "
+                },
+                {
+                  "type": "text",
+                  "text": "GET /v1/intercepted-events",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " on the Session KV server."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641076.672199",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":twisted_rightwards_arrows: *Drift:* <mailto:garisingh@google.com|garisingh@google.com> patched customresourcedefinitions/agentplugins.kubeagents.x-k8s.io on cluster kube-agents-hub, fields owned by kubectl, kube-apiserver, terraform-provider-helm_v3.3.0_x5\n:seedling: _Checking what the cluster looks like now..._",
+      "thread_ts": "1793641076.672199",
+      "reply_count": 5,
+      "reply_users_count": 1,
+      "latest_reply": "1793642510.051239",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "CgGn",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "twisted_rightwards_arrows",
+                  "unicode": "1f500"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Drift:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "link",
+                  "url": "mailto:garisingh@google.com",
+                  "text": "garisingh@google.com"
+                },
+                {
+                  "type": "text",
+                  "text": " patched customresourcedefinitions/agentplugins.kubeagents.x-k8s.io on cluster kube-agents-hub, fields owned by kubectl, kube-apiserver, terraform-provider-helm_v3.3.0_x5\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Checking what the cluster looks like now...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641076.597629",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":twisted_rightwards_arrows: *Drift:* <mailto:garisingh@google.com|garisingh@google.com> patched customresourcedefinitions/platformagents.kubeagents.x-k8s.io on cluster kube-agents-hub, fields owned by kubectl, kube-apiserver, terraform-provider-helm_v3.3.0_x5\n:seedling: _Checking what the cluster looks like now..._",
+      "thread_ts": "1793641076.597629",
+      "reply_count": 7,
+      "reply_users_count": 1,
+      "latest_reply": "1793643295.352939",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "rVy07",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "twisted_rightwards_arrows",
+                  "unicode": "1f500"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Drift:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "link",
+                  "url": "mailto:garisingh@google.com",
+                  "text": "garisingh@google.com"
+                },
+                {
+                  "type": "text",
+                  "text": " patched customresourcedefinitions/platformagents.kubeagents.x-k8s.io on cluster kube-agents-hub, fields owned by kubectl, kube-apiserver, terraform-provider-helm_v3.3.0_x5\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Checking what the cluster looks like now...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641076.475419",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":twisted_rightwards_arrows: *Drift:* <mailto:garisingh@google.com|garisingh@google.com> patched customresourcedefinitions/agentprofiles.kubeagents.x-k8s.io on cluster kube-agents-hub, fields owned by kubectl, kube-apiserver, terraform-provider-helm_v3.3.0_x5\n:seedling: _Checking what the cluster looks like now..._",
+      "thread_ts": "1793641076.475419",
+      "reply_count": 4,
+      "reply_users_count": 1,
+      "latest_reply": "1793642168.393869",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "kL9JM",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "twisted_rightwards_arrows",
+                  "unicode": "1f500"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Drift:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "link",
+                  "url": "mailto:garisingh@google.com",
+                  "text": "garisingh@google.com"
+                },
+                {
+                  "type": "text",
+                  "text": " patched customresourcedefinitions/agentprofiles.kubeagents.x-k8s.io on cluster kube-agents-hub, fields owned by kubectl, kube-apiserver, terraform-provider-helm_v3.3.0_x5\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Checking what the cluster looks like now...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641067.598549",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":rotating_light: *github-token-minter in kube-agents-hub keeps crashing.* Looking now.",
+      "thread_ts": "1793641067.598549",
+      "reply_count": 4,
+      "reply_users_count": 1,
+      "latest_reply": "1793641983.672999",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "pJoB",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "rotating_light",
+                  "unicode": "1f6a8"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "github-token-minter in kube-agents-hub keeps crashing.",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Looking now."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641067.420109",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":rotating_light: *github-token-minter in kube-agents-hub keeps crashing.* Looking now.",
+      "thread_ts": "1793641067.420109",
+      "reply_count": 5,
+      "reply_users_count": 1,
+      "latest_reply": "1793641983.763869",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "jP++j",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "rotating_light",
+                  "unicode": "1f6a8"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "github-token-minter in kube-agents-hub keeps crashing.",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Looking now."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793640512.522029",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":twisted_rightwards_arrows: *Drift:* garisingh@gke.ninja updated kubeagents-system/secrets/sh.helm.release.v1.kube-agents.v1 on cluster kube-agents-hub (field ownership not read: failed)\n:seedling: _Checking what the cluster looks like now..._",
+      "thread_ts": "1793640512.522029",
+      "reply_count": 1,
+      "reply_users_count": 1,
+      "latest_reply": "1793640543.597109",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "48KQs",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "twisted_rightwards_arrows",
+                  "unicode": "1f500"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Drift:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " garisingh@gke.ninja updated kubeagents-system/secrets/sh.helm.release.v1.kube-agents.v1 on cluster kube-agents-hub (field ownership not read: failed)\n"
+                },
+                {
+                  "type": "emoji",
+                  "name": "seedling",
+                  "unicode": "1f331"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Checking what the cluster looks like now...",
+                  "style": {
+                    "italic": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793640314.752219",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":wrench: *Cluster Agent reconcile*\n  :heavy_plus_sign: created 3 profile(s): `cluster-kcna-2026-demos-bank-prod-us-central1-b`, `cluster-kcna-2026-demos-boutique-prod-us-central1-b`, `cluster-kcna-2026-demos-kube-agents-hub-us-central1`",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "z5Tax",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "wrench",
+                  "unicode": "1f527"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Cluster Agent reconcile",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "\n  "
+                },
+                {
+                  "type": "emoji",
+                  "name": "heavy_plus_sign",
+                  "unicode": "2795"
+                },
+                {
+                  "type": "text",
+                  "text": " created 3 profile(s): "
+                },
+                {
+                  "type": "text",
+                  "text": "cluster-kcna-2026-demos-bank-prod-us-central1-b",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "cluster-kcna-2026-demos-boutique-prod-us-central1-b",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "cluster-kcna-2026-demos-kube-agents-hub-us-central1",
+                  "style": {
+                    "code": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793640312.278569",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":card_index_dividers: *Drift backlog:* 50 changes reached drift detection late (they queued before it started pulling, or waited over 30 minutes), so they are listed here instead of triaged one card each.\nBy principal: garisingh@gke.ninja (50)\nIncluding: kubeagents-system/configmaps/github-token-minter-config on kube-agents-hub, clusterrolebindings/kube-agents-kubeagents-system-operator-rolebinding on kube-agents-hub, kubeagents-system/podmonitorings/kube-agents-operator-monitoring on kube-agents-hub, kubeagents-system/podmonitorings/platform-agent-gateway-monitoring on kube-agents-hub, kubeagents-system/rolebindings/kube-agents-operator-leader-election-rolebinding on kube-agents-hub, and 45 more\nRecorded 2026-11-02 17:23:31 to 2026-11-02 17:24:12 UTC. The full list is the `backlog` rows of `GET /v1/intercepted-events` on the Session KV server.",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "RsI",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "card_index_dividers",
+                  "unicode": "1f5c2-fe0f"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Drift backlog:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " 50 changes reached drift detection late (they queued before it started pulling, or waited over 30 minutes), so they are listed here instead of triaged one card each.\nBy principal: garisingh@gke.ninja (50)\nIncluding: kubeagents-system/configmaps/github-token-minter-config on kube-agents-hub, clusterrolebindings/kube-agents-kubeagents-system-operator-rolebinding on kube-agents-hub, kubeagents-system/podmonitorings/kube-agents-operator-monitoring on kube-agents-hub, kubeagents-system/podmonitorings/platform-agent-gateway-monitoring on kube-agents-hub, kubeagents-system/rolebindings/kube-agents-operator-leader-election-rolebinding on kube-agents-hub, and 45 more\nRecorded 2026-11-02 17:23:31 to 2026-11-02 17:24:12 UTC. The full list is the "
+                },
+                {
+                  "type": "text",
+                  "text": "backlog",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " rows of "
+                },
+                {
+                  "type": "text",
+                  "text": "GET /v1/intercepted-events",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " on the Session KV server."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793640214.219439",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":rotating_light: *github-token-minter in kube-agents-hub keeps crashing.* Looking now.",
+      "thread_ts": "1793640214.219439",
+      "reply_count": 1,
+      "reply_users_count": 1,
+      "latest_reply": "1793640270.925989",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "tua+Z",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "rotating_light",
+                  "unicode": "1f6a8"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "github-token-minter in kube-agents-hub keeps crashing.",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Looking now."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793640214.131099",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":rotating_light: *github-token-minter in kube-agents-hub keeps crashing.* Looking now.",
+      "thread_ts": "1793640214.131099",
+      "reply_count": 3,
+      "reply_users_count": 1,
+      "latest_reply": "1793640483.003099",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "WuZ",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "rotating_light",
+                  "unicode": "1f6a8"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "github-token-minter in kube-agents-hub keeps crashing.",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Looking now."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subtype": "channel_join",
+      "user": "U0CE6TMT88H",
+      "text": "<@U0CE6TMT88H> has joined the channel",
+      "inviter": "U0CDYBNMHV1",
+      "type": "message",
+      "ts": "1793628746.427719"
+    },
+    {
+      "subtype": "channel_join",
+      "user": "U0CDYBNMHV1",
+      "text": "<@U0CDYBNMHV1> has joined the channel",
+      "type": "message",
+      "ts": "1793626133.145409"
+    },
+    {
+      "subtype": "channel_join",
+      "user": "U0CE2HWQ9C6",
+      "text": "<@U0CE2HWQ9C6> has joined the channel",
+      "type": "message",
+      "ts": "1793626089.578089"
+    }
+  ]
+}

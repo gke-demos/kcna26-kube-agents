@@ -13,15 +13,24 @@
 // limitations under the License.
 
 // Package signals turns what happens in the Slack channel and on the fleet
-// repo into signal events (see model.IsSignal). STUB: interface fixed, body
-// to come.
+// repo into signal events (see model.IsSignal): the Slack poller reports
+// alerts, triage notes, reports, chosen fixes and chat; the GitHub poller
+// reports pull requests and audit ledger issues.
 package signals
 
 import (
-	"context"
+	"net/http"
 	"time"
 
 	"github.com/gke-demos/kcna26-kube-agents/console/internal/model"
+)
+
+const (
+	// maxTitle and maxMessage bound Event.Title and Event.Message, in runes.
+	maxTitle   = 120
+	maxMessage = 600
+	// httpTimeout bounds one API request.
+	httpTimeout = 20 * time.Second
 )
 
 // Emitter publishes signal events (collector.Store implements it).
@@ -33,6 +42,18 @@ type Emitter interface {
 // whether that workload is currently drawn.
 type Resolver func(cluster, name string) (key string, ok bool)
 
+// resolveKey returns the workload's key, or "" when the cluster or name is
+// unknown or the workload is not drawn.
+func resolveKey(r Resolver, cluster, name string) string {
+	if r == nil || cluster == "" || name == "" {
+		return ""
+	}
+	if key, ok := r(cluster, name); ok {
+		return key
+	}
+	return ""
+}
+
 // SlackOptions configures the Slack poller.
 type SlackOptions struct {
 	Token   string
@@ -41,16 +62,19 @@ type SlackOptions struct {
 	Interval time.Duration
 }
 
-// Slack polls the channel and its threads.
-type Slack struct{ o SlackOptions }
-
 // NewSlack returns a poller.
-func NewSlack(o SlackOptions) *Slack { return &Slack{o: o} }
-
-// Run polls until ctx ends.
-func (s *Slack) Run(ctx context.Context, e Emitter, r Resolver) error {
-	<-ctx.Done()
-	return ctx.Err()
+func NewSlack(o SlackOptions) *Slack {
+	if o.Interval <= 0 {
+		o.Interval = defaultSlackInterval
+	}
+	return &Slack{
+		o:        o,
+		api:      defaultSlackAPI,
+		client:   &http.Client{Timeout: httpTimeout},
+		lookback: slackLookback,
+		window:   slackThreadWindow,
+		now:      time.Now,
+	}
 }
 
 // GitHubOptions configures the GitHub poller.
@@ -64,14 +88,16 @@ type GitHubOptions struct {
 	Interval time.Duration
 }
 
-// GitHub polls the fleet repo's PRs and audit issues.
-type GitHub struct{ o GitHubOptions }
-
 // NewGitHub returns a poller.
-func NewGitHub(o GitHubOptions) *GitHub { return &GitHub{o: o} }
-
-// Run polls until ctx ends.
-func (g *GitHub) Run(ctx context.Context, e Emitter, r Resolver) error {
-	<-ctx.Done()
-	return ctx.Err()
+func NewGitHub(o GitHubOptions) *GitHub {
+	if o.Interval <= 0 {
+		o.Interval = defaultGitHubInterval
+	}
+	return &GitHub{
+		o:        o,
+		api:      defaultGitHubAPI,
+		client:   &http.Client{Timeout: httpTimeout},
+		lookback: githubLookback,
+		now:      time.Now,
+	}
 }

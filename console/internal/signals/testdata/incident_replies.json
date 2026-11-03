@@ -1,0 +1,990 @@
+{
+  "messages": [
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793641808.988429",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":rotating_light: *recommendationservice in boutique-prod keeps crashing.* Looking now.",
+      "thread_ts": "1793641808.988429",
+      "reply_count": 10,
+      "reply_users_count": 1,
+      "latest_reply": "1793644833.068039",
+      "reply_users": [
+        "U0CE6TMT88H"
+      ],
+      "is_locked": false,
+      "subscribed": false,
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "ZW2g",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "rotating_light",
+                  "unicode": "1f6a8"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "recommendationservice in boutique-prod keeps crashing.",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Looking now."
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "agent_session": {
+        "status": "closed",
+        "agent_bot_user_ids": [
+          "U0CE6TMT88H"
+        ],
+        "agent_statuses": [
+          {
+            "agent_bot_user_id": "U0CE6TMT88H",
+            "status": "closed",
+            "is_stoppable": true
+          }
+        ]
+      }
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793642380.667739",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "recommendationservice crashloop in boutique-prod ◌ Triage online-boutique/Pod/recommendationservice-659fd87c86-c7xjn (BackOff) on boutique-prod",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "blocks": [
+        {
+          "type": "task_card",
+          "block_id": "ojUq5",
+          "task_id": "t_d7b7a1da",
+          "title": "Triage online-boutique/Pod/recommendationservice-659fd87c86-c7xjn (BackOff) on boutique-prod",
+          "status": "in_progress"
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793642451.332189",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "recommendationservice crashloop in boutique-prod ◌ Identified that recommendationservice has two replicasets running: revision 2 is running and healthy (memory limit 32Mi), while revision 3 is crash-looping with OOMKilled (memory limit 20Mi).",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "blocks": [
+        {
+          "type": "task_card",
+          "block_id": "mkOJF",
+          "task_id": "t_d7b7a1da",
+          "title": "Identified that recommendationservice has two replicasets running: revision 2 is running and healthy (memory limit 32Mi), while revision 3 is crash-looping with OOMKilled (memory limit 20Mi).",
+          "details": {
+            "type": "rich_text",
+            "block_id": "70UAp",
+            "elements": [
+              {
+                "type": "rich_text_list",
+                "style": "bullet",
+                "indent": 0,
+                "elements": [
+                  {
+                    "type": "rich_text_section",
+                    "elements": [
+                      {
+                        "type": "text",
+                        "text": "◌ Identified that recommendationservice has two replicasets running: revision 2 is running and healthy (memory limit 32Mi), while revision 3 is crash-looping with OOMKilled (memory limit 20Mi)."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "status": "in_progress"
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793642520.992149",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "recommendationservice crashloop in boutique-prod ◌ Found that recommendationservice-659fd87c86-c7xjn (rev 3) has memory limits of 20Mi and is OOMKilled (Exit Code 137), whereas recommendationservice-556b7d9948-l72m2 (rev 2) has memory limits of 32Mi and is running healthy using ~30Mi. We need… · step 2 ▸",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "blocks": [
+        {
+          "type": "task_card",
+          "block_id": "Ic1gy",
+          "task_id": "t_d7b7a1da",
+          "title": "Found that recommendationservice-659fd87c86-c7xjn (rev 3) has memory limits of 20Mi and is OOMKilled (Exit Code 137), whereas recommendationservice-556b7d9948-l72m2 (rev 2) has memory limits of 32Mi and is running healthy using ~30Mi. We need… · step 2 ▸",
+          "details": {
+            "type": "rich_text",
+            "block_id": "joFQy",
+            "elements": [
+              {
+                "type": "rich_text_list",
+                "style": "bullet",
+                "indent": 0,
+                "elements": [
+                  {
+                    "type": "rich_text_section",
+                    "elements": [
+                      {
+                        "type": "text",
+                        "text": "✓ Identified that recommendationservice has two replicasets running: revision 2 is running and healthy (memory limit 32Mi), while revision 3 is crash-looping with OOMKilled (memory limit 20Mi)."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "rich_text_section",
+                    "elements": [
+                      {
+                        "type": "text",
+                        "text": "◌ Found that recommendationservice-659fd87c86-c7xjn (rev 3) has memory limits of 20Mi and is OOMKilled (Exit Code 137), whereas recommendationservice-556b7d9948-l72m2 (rev 2) has memory limits of 32Mi and is running healthy using ~30Mi. We need to raise the limits back to 32Mi or higher."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "status": "in_progress"
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793642657.082239",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "recommendationservice crashloop in boutique-prod ✓ State at 18:03 UTC: recommendationservice-659fd87c86-c7xjn is in CrashLoopBackOff due to a memory limit of 20Mi causing OOMKilled (Exit Code 137). Proposal is to increase requests/limits to 64Mi (Option B) or revert to 32Mi (Option A).",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "blocks": [
+        {
+          "type": "task_card",
+          "block_id": "Aq4+B",
+          "task_id": "t_d7b7a1da",
+          "title": "State at 18:03 UTC: recommendationservice-659fd87c86-c7xjn is in CrashLoopBackOff due to a memory limit of 20Mi causing OOMKilled (Exit Code 137). Proposal is to increase requests/limits to 64Mi (Option B) or revert to 32Mi (Option A).",
+          "details": {
+            "type": "rich_text",
+            "block_id": "N1Uv7",
+            "elements": [
+              {
+                "type": "rich_text_list",
+                "style": "bullet",
+                "indent": 0,
+                "elements": [
+                  {
+                    "type": "rich_text_section",
+                    "elements": [
+                      {
+                        "type": "text",
+                        "text": "✓ Identified that recommendationservice has two replicasets running: revision 2 is running and healthy (memory limit 32Mi), while revision 3 is crash-looping with OOMKilled (memory limit 20Mi)."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "rich_text_section",
+                    "elements": [
+                      {
+                        "type": "text",
+                        "text": "✓ Found that recommendationservice-659fd87c86-c7xjn (rev 3) has memory limits of 20Mi and is OOMKilled (Exit Code 137), whereas recommendationservice-556b7d9948-l72m2 (rev 2) has memory limits of 32Mi and is running healthy using ~30Mi. We need to raise the limits back to 32Mi or higher."
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "status": "complete"
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793642657.279819",
+      "edited": {
+        "user": "U0CE6TMT88H",
+        "ts": "1793643325.000000"
+      },
+      "bot_id": "B0CE4R7DFM0",
+      "text": "State at 18:03 UTC: The recommendationservice pod online-boutique/recommendationservice-659fd87c86-c7xjn is failing to start with a CrashLoopBackOff… Revert to working 32Mi — apply Option A Increase to 64Mi with headroom — apply Option B  *What's wrong*  State at 18:03 UTC: The recommendationservice pod online-boutique/recommendationservice-659fd87c86-c7xjn is failing to start with a CrashLoopBackOff status due to its server container being repeatedly OOM-killed.  *Why*  • The newly applied deployment revision 3 configures a memory limit of 20Mi, which is insufficient since the active healthy container (from revision 2) uses 30Mi of memory, resulting in immediate container OOMKilled terminations (exit code 137) during startup.  *What to do*  • *Option A (Revert to working 32Mi):* Revert the recommendationservice deployment memory requests and limits to the last-working value of 32Mi. • *Option B (Increase to 64Mi with headroom):* Increase the recommendationservice deployment memory requests and limits to 64Mi to prevent future OOM crashes. • :white_check_mark: *Recommended: Option B* — Increasing the limits to 64Mi provides additional headroom for Python's memory consumption, ensuring a safer and more durable fix than running right at the 30Mi edge. • *To authorize:* reply *'apply'* to open a GitOps Pull Request with the recommended fix, or name one directly with *'apply Option A'* / *'apply Option B'*.  :link: <https://console.cloud.google.com/kubernetes/workload/overview?project=kcna-2026-demos|GKE Workloads> | <https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22;project=kcna-2026-demos|Cloud Logs>  *Evidence for verified claims*  The pod recommendationservice-659fd87c86-c7xjn is in CrashLoopBackOff state. (exit 0, 2026-11-02T18:03:41Z)  ``` $ kubectl get pod recommendationservice-659fd87c86-c7xjn -n online-boutique ``` ``` recommendationservice-659fd87c86-c7xjn   0/1     CrashLoopBackOff ```  The container server was terminated because it was OOMKilled with exit code 137. (exit 0, 2026-11-02T18:01:06Z)  ``` $ kubectl get pod recommendationservice-659fd87c86-c7xjn -n online-boutique -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}' ``` ``` OOMKilled ```  Revision 3 has limits and requests configured for memory at 20Mi. (exit 0, 2026-11-02T18:00:46Z)  ``` $ kubectl get rs recommendationservice-659fd87c86 -n online-boutique -o yaml ``` ```             memory: 20Mi ```  Revision 2 has limits and requests configured for memory at 32Mi and is running. (exit 0, 2026-11-02T18:04:09Z)  ``` $ kubectl get rs recommendationservice-556b7d9948 -n online-boutique -o yaml ``` ```             memory: 32Mi ```  The running instance of recommendationservice is currently utilizing 30Mi of memory. (exit 0, 2026-11-02T18:04:12Z)  ``` $ kubectl top pod -n online-boutique ``` ``` recommendationservice-556b7d9948-l72m2   10m          30Mi ```",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "TaZHL",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "State at 18:03 UTC: The recommendationservice pod online-boutique/recommendationservice-659fd87c86-c7xjn is failing to start with a CrashLoopBackOff…",
+                  "style": {
+                    "bold": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "container",
+          "block_id": "9Cym/",
+          "title": {
+            "type": "plain_text",
+            "text": "why · what each option does",
+            "emoji": true
+          },
+          "is_collapsible": true,
+          "default_collapsed": true,
+          "child_blocks": [
+            {
+              "type": "rich_text",
+              "block_id": "igVni",
+              "elements": [
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "What's wrong",
+                      "style": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": "\n\n"
+                    },
+                    {
+                      "type": "text",
+                      "text": "State at 18:03 UTC: The recommendationservice pod online-boutique/recommendationservice-659fd87c86-c7xjn is failing to start with a CrashLoopBackOff status due to its server container being repeatedly OOM-killed."
+                    },
+                    {
+                      "type": "text",
+                      "text": "\n\n"
+                    },
+                    {
+                      "type": "text",
+                      "text": "Why",
+                      "style": {
+                        "bold": true
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_list",
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "The newly applied deployment revision 3 configures a memory limit of 20Mi, which is insufficient since the active healthy container (from revision 2) uses 30Mi of memory, resulting in immediate container OOMKilled terminations (exit code 137) during startup."
+                        }
+                      ]
+                    }
+                  ],
+                  "style": "bullet",
+                  "indent": 0
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "What to do",
+                      "style": {
+                        "bold": true
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_list",
+                  "elements": [
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "Option A (Revert to working 32Mi):",
+                          "style": {
+                            "bold": true
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "text": " Revert the recommendationservice deployment memory requests and limits to the last-working value of 32Mi."
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "Option B (Increase to 64Mi with headroom):",
+                          "style": {
+                            "bold": true
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "text": " Increase the recommendationservice deployment memory requests and limits to 64Mi to prevent future OOM crashes."
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "✅ "
+                        },
+                        {
+                          "type": "text",
+                          "text": "Recommended: Option B",
+                          "style": {
+                            "bold": true
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "text": " — Increasing the limits to 64Mi provides additional headroom for Python's memory consumption, ensuring a safer and more durable fix than running right at the 30Mi edge."
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rich_text_section",
+                      "elements": [
+                        {
+                          "type": "text",
+                          "text": "To authorize:",
+                          "style": {
+                            "bold": true
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "text": " reply "
+                        },
+                        {
+                          "type": "text",
+                          "text": "'apply'",
+                          "style": {
+                            "bold": true
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "text": " to open a GitOps Pull Request with the recommended fix, or name one directly with "
+                        },
+                        {
+                          "type": "text",
+                          "text": "'apply Option A'",
+                          "style": {
+                            "bold": true
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "text": " / "
+                        },
+                        {
+                          "type": "text",
+                          "text": "'apply Option B'",
+                          "style": {
+                            "bold": true
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "text": "."
+                        }
+                      ]
+                    }
+                  ],
+                  "style": "bullet",
+                  "indent": 0
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "🔗 "
+                    },
+                    {
+                      "type": "link",
+                      "url": "https://console.cloud.google.com/kubernetes/workload/overview?project=kcna-2026-demos",
+                      "text": "GKE Workloads"
+                    },
+                    {
+                      "type": "text",
+                      "text": " | "
+                    },
+                    {
+                      "type": "link",
+                      "url": "https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22;project=kcna-2026-demos",
+                      "text": "Cloud Logs"
+                    },
+                    {
+                      "type": "text",
+                      "text": "\n\n"
+                    },
+                    {
+                      "type": "text",
+                      "text": "Evidence for verified claims",
+                      "style": {
+                        "bold": true
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "text": "\n\n"
+                    },
+                    {
+                      "type": "text",
+                      "text": "The pod recommendationservice-659fd87c86-c7xjn is in CrashLoopBackOff state. (exit 0, 2026-11-02T18:03:41Z)"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "$ kubectl get pod recommendationservice-659fd87c86-c7xjn -n online-boutique"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "recommendationservice-659fd87c86-c7xjn   0/1     CrashLoopBackOff"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "The container server was terminated because it was OOMKilled with exit code 137. (exit 0, 2026-11-02T18:01:06Z)"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "$ kubectl get pod recommendationservice-659fd87c86-c7xjn -n online-boutique -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}'"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "OOMKilled"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "Revision 3 has limits and requests configured for memory at 20Mi. (exit 0, 2026-11-02T18:00:46Z)"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "$ kubectl get rs recommendationservice-659fd87c86 -n online-boutique -o yaml"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "            memory: 20Mi"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "Revision 2 has limits and requests configured for memory at 32Mi and is running. (exit 0, 2026-11-02T18:04:09Z)"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "$ kubectl get rs recommendationservice-556b7d9948 -n online-boutique -o yaml"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "            memory: 32Mi"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_section",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "The running instance of recommendationservice is currently utilizing 30Mi of memory. (exit 0, 2026-11-02T18:04:12Z)"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "$ kubectl top pod -n online-boutique"
+                    }
+                  ]
+                },
+                {
+                  "type": "rich_text_preformatted",
+                  "elements": [
+                    {
+                      "type": "text",
+                      "text": "recommendationservice-556b7d9948-l72m2   10m          30Mi"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "actions",
+          "block_id": "M0TqN",
+          "elements": [
+            {
+              "type": "button",
+              "action_id": "kage.link.0",
+              "text": {
+                "type": "plain_text",
+                "text": "GKE Workloads :arrow_upper_right:",
+                "emoji": true
+              },
+              "url": "https://console.cloud.google.com/kubernetes/workload/overview?project=kcna-2026-demos"
+            },
+            {
+              "type": "button",
+              "action_id": "kage.link.1",
+              "text": {
+                "type": "plain_text",
+                "text": "Cloud Logs :arrow_upper_right:",
+                "emoji": true
+              },
+              "url": "https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22;project=kcna-2026-demos"
+            }
+          ]
+        },
+        {
+          "type": "context",
+          "block_id": "EnRop",
+          "elements": [
+            {
+              "type": "plain_text",
+              "text": "✓ Gari Singh (google): Increase to 64Mi with headroom",
+              "emoji": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793643336.371809",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "checking recommendationservice.",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "CIV0g",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "checking recommendationservice.",
+                  "style": {
+                    "bold": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793643349.096569",
+      "edited": {
+        "user": "U0CE6TMT88H",
+        "ts": "1793643405.000000"
+      },
+      "bot_id": "B0CE4R7DFM0",
+      "text": "Apply Option B: Increase recommendationservice memory to 64Mi ✓ Opened Pull Request #1 in gke-demos/kcna26-fleet-gitops to increase recommendationservice memory to 64Mi.",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "blocks": [
+        {
+          "type": "task_card",
+          "block_id": "BLaWZ",
+          "task_id": "t_0835c1d3",
+          "title": "Opened Pull Request #1 in gke-demos/kcna26-fleet-gitops to increase recommendationservice memory to 64Mi.",
+          "status": "complete"
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793643405.205599",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "I opened PR #1 in kcna26-fleet-gitops. It's yours to review. chore(online-boutique): increase recommendationservice memory requests and limits to 64Mi <https://github.com/gke-demos/kcna26-fleet-gitops/pull/1>",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "attachments": [
+        {
+          "id": 1,
+          "blocks": [
+            {
+              "type": "actions",
+              "block_id": "nGwJw",
+              "elements": [
+                {
+                  "type": "button",
+                  "action_id": "kage.link.0",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Open PR :arrow_upper_right:",
+                    "emoji": true
+                  },
+                  "style": "primary",
+                  "url": "https://github.com/gke-demos/kcna26-fleet-gitops/pull/1"
+                },
+                {
+                  "type": "button",
+                  "action_id": "kage.link.1",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Files changed :arrow_upper_right:",
+                    "emoji": true
+                  },
+                  "url": "https://github.com/gke-demos/kcna26-fleet-gitops/pull/1/files"
+                }
+              ]
+            }
+          ],
+          "color": "#2EB67D",
+          "fallback": "I opened PR #1 in kcna26-fleet-gitops. It's yours to review.\nchore(online-boutique): increase recommendationservice memory requests and limits to 64Mi\nhttps://github.com/gke-demos/kcna26-fleet-gitops/pull/1"
+        }
+      ],
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "328Uw",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "I opened PR #1 in kcna26-fleet-gitops. It's yours to review.",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " chore(online-boutique): increase recommendationservice memory requests and limits to 64Mi"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793643405.496679",
+      "bot_id": "B0CE4R7DFM0",
+      "text": "*The GitOps Pull Request proposing to increase the recommendationservice memory to 64Mi has been opened successfully.*  I have prepared the changes in the `gke-demos/kcna26-fleet-gitops` repository and created <https://github.com/gke-demos/kcna26-fleet-gitops/pull/1|Pull Request #1> on the `main` branch. This PR updates the memory requests and limits for the `recommendationservice` Deployment in the `online-boutique` namespace on the `boutique-prod` cluster (`cluster-kcna-2026-demos-boutique-prod-us-central1-b`) from `20Mi` to `64Mi`.  Once approved and merged, the GitOps reconciler will automatically apply this change to the cluster.",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "K4owt",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "The GitOps Pull Request proposing to increase the recommendationservice memory to 64Mi has been opened successfully.",
+                  "style": {
+                    "bold": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "rich_text",
+          "block_id": "RzHRc",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "text",
+                  "text": "I have prepared the changes in the "
+                },
+                {
+                  "type": "text",
+                  "text": "gke-demos/kcna26-fleet-gitops",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " repository and created "
+                },
+                {
+                  "type": "link",
+                  "url": "https://github.com/gke-demos/kcna26-fleet-gitops/pull/1",
+                  "text": "Pull Request #1"
+                },
+                {
+                  "type": "text",
+                  "text": " on the "
+                },
+                {
+                  "type": "text",
+                  "text": "main",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " branch. This PR updates the memory requests and limits for the "
+                },
+                {
+                  "type": "text",
+                  "text": "recommendationservice",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " Deployment in the "
+                },
+                {
+                  "type": "text",
+                  "text": "online-boutique",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " namespace on the "
+                },
+                {
+                  "type": "text",
+                  "text": "boutique-prod",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " cluster ("
+                },
+                {
+                  "type": "text",
+                  "text": "cluster-kcna-2026-demos-boutique-prod-us-central1-b",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": ") from "
+                },
+                {
+                  "type": "text",
+                  "text": "20Mi",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " to "
+                },
+                {
+                  "type": "text",
+                  "text": "64Mi",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                },
+                {
+                  "type": "text",
+                  "text": "\n\n"
+                },
+                {
+                  "type": "text",
+                  "text": "Once approved and merged, the GitOps reconciler will automatically apply this change to the cluster."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "user": "U0CE6TMT88H",
+      "type": "message",
+      "ts": "1793644833.068039",
+      "bot_id": "B0CE4R7DFM0",
+      "text": ":zzz: *Quiet since 18:25 UTC:* no new `Crash loop back off` events from `online-boutique/recommendationservice-659fd87c86-c7xjn` on `boutique-prod` for 15 min (first at 17:44 UTC, 11 seen). Read off events alone: the object was not re-read, so a recovered pod and a deleted one look the same. The triage above says what was true when it was written.",
+      "thread_ts": "1793641808.988429",
+      "parent_user_id": "U0CE6TMT88H",
+      "blocks": [
+        {
+          "type": "rich_text",
+          "block_id": "S9yo",
+          "elements": [
+            {
+              "type": "rich_text_section",
+              "elements": [
+                {
+                  "type": "emoji",
+                  "name": "zzz",
+                  "unicode": "1f4a4"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Quiet since 18:25 UTC:",
+                  "style": {
+                    "bold": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " no new "
+                },
+                {
+                  "type": "text",
+                  "text": "Crash loop back off",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " events from "
+                },
+                {
+                  "type": "text",
+                  "text": "online-boutique/recommendationservice-659fd87c86-c7xjn",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " on "
+                },
+                {
+                  "type": "text",
+                  "text": "boutique-prod",
+                  "style": {
+                    "code": true
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": " for 15 min (first at 17:44 UTC, 11 seen). Read off events alone: the object was not re-read, so a recovered pod and a deleted one look the same. The triage above says what was true when it was written."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
