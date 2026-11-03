@@ -313,7 +313,7 @@ func docs(s string) []string { return strings.Split(s, "\n---\n") }
 func TestTriggerOOM(t *testing.T) {
 	f, r := newFake(t)
 	before := f.files[recoPath]
-	title, link, err := r.Run(context.Background(), "trigger-oom", "recommendationservice", by)
+	title, link, err := r.do(context.Background(), "trigger-oom", "recommendationservice", by)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -359,7 +359,7 @@ func TestTriggerOOM(t *testing.T) {
 	}
 
 	// A second press finds nothing to change.
-	if _, _, err := r.Run(context.Background(), "trigger-oom", "recommendationservice", by); err == nil ||
+	if _, _, err := r.do(context.Background(), "trigger-oom", "recommendationservice", by); err == nil ||
 		!strings.Contains(err.Error(), "run reset first") {
 		t.Errorf("second squeeze: err = %v", err)
 	}
@@ -392,7 +392,7 @@ func TestSetInWorkloadPicksTheWorkloadDoc(t *testing.T) {
 
 func TestTriggerBadImage(t *testing.T) {
 	f, r := newFake(t)
-	title, link, err := r.Run(context.Background(), "trigger-badimage", "frontend", by)
+	title, link, err := r.do(context.Background(), "trigger-badimage", "frontend", by)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -411,7 +411,7 @@ func TestTriggerBadImage(t *testing.T) {
 	}
 
 	// Already at v0.10.70: refuse rather than produce v0.10.700.
-	if _, _, err := r.Run(context.Background(), "trigger-badimage", "frontend", by); err == nil ||
+	if _, _, err := r.do(context.Background(), "trigger-badimage", "frontend", by); err == nil ||
 		!strings.Contains(err.Error(), "not at v0.10.7") {
 		t.Errorf("second rollout: err = %v", err)
 	}
@@ -423,7 +423,7 @@ func TestTriggerBadImage(t *testing.T) {
 func TestTriggerUnschedulable(t *testing.T) {
 	f, r := newFake(t)
 	before := f.files[fePath]
-	title, _, err := r.Run(context.Background(), "trigger-unschedulable", "frontend", by)
+	title, _, err := r.do(context.Background(), "trigger-unschedulable", "frontend", by)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -449,7 +449,7 @@ func TestTriggerUnschedulable(t *testing.T) {
 			t.Errorf("doc %d changed", i)
 		}
 	}
-	if _, _, err := r.Run(context.Background(), "trigger-unschedulable", "frontend", by); err == nil ||
+	if _, _, err := r.do(context.Background(), "trigger-unschedulable", "frontend", by); err == nil ||
 		!strings.Contains(err.Error(), "run reset first") {
 		t.Errorf("second press: err = %v", err)
 	}
@@ -466,7 +466,7 @@ func TestTargetValidation(t *testing.T) {
 		{"delete-everything", "frontend"},   // no such action
 		{"trigger-oom", "recommendationservice/../frontend"},
 	} {
-		if _, _, err := r.Run(context.Background(), c.action, c.target, by); err == nil {
+		if _, _, err := r.do(context.Background(), c.action, c.target, by); err == nil {
 			t.Errorf("Run(%q, %q): want error", c.action, c.target)
 		}
 	}
@@ -490,7 +490,7 @@ func TestTargetValidation(t *testing.T) {
 
 func TestPressedByIsOneLine(t *testing.T) {
 	f, r := newFake(t)
-	if _, _, err := r.Run(context.Background(), "trigger-badimage", "frontend", "eve@example.com\nSigned-off-by: x"); err != nil {
+	if _, _, err := r.do(context.Background(), "trigger-badimage", "frontend", "eve@example.com\nSigned-off-by: x"); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.HasSuffix(f.puts[0].message, "\n\nPressed-by: eve@example.comSigned-off-by: x") {
@@ -526,7 +526,7 @@ func seedReset(f *fakeGitHub, sameClusters bool) {
 func TestReset(t *testing.T) {
 	f, r := newFake(t)
 	seedReset(f, false)
-	title, link, err := r.Run(context.Background(), "reset", "", by)
+	title, link, err := r.do(context.Background(), "reset", "", by)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -579,7 +579,7 @@ func TestResetAlreadyAtBaseline(t *testing.T) {
 	f, r := newFake(t)
 	seedReset(f, true)
 	f.pulls = f.pulls[:2]
-	title, link, err := r.Run(context.Background(), "reset", "", by)
+	title, link, err := r.do(context.Background(), "reset", "", by)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -617,12 +617,12 @@ func TestRunIsSerialized(t *testing.T) {
 	}
 	errs := make(chan error, 2)
 	go func() {
-		_, _, err := r.Run(context.Background(), "trigger-oom", "recommendationservice", by)
+		_, _, err := r.do(context.Background(), "trigger-oom", "recommendationservice", by)
 		errs <- err
 	}()
 	<-arrived
 	go func() {
-		_, _, err := r.Run(context.Background(), "trigger-oom", "recommendationservice", by)
+		_, _, err := r.do(context.Background(), "trigger-oom", "recommendationservice", by)
 		errs <- err
 	}()
 	select {
@@ -651,7 +651,7 @@ func TestRunGivesUpWaitingOnCancel(t *testing.T) {
 	r.sem <- struct{}{}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, _, err := r.Run(ctx, "trigger-oom", "recommendationservice", by); err != context.Canceled {
+	if _, _, err := r.do(ctx, "trigger-oom", "recommendationservice", by); err != context.Canceled {
 		t.Errorf("err = %v, want context.Canceled", err)
 	}
 }
@@ -659,11 +659,22 @@ func TestRunGivesUpWaitingOnCancel(t *testing.T) {
 func TestGitHubErrorSurfacesWithoutToken(t *testing.T) {
 	f, r := newFake(t)
 	delete(f.files, recoPath)
-	_, _, err := r.Run(context.Background(), "trigger-oom", "recommendationservice", by)
+	_, _, err := r.do(context.Background(), "trigger-oom", "recommendationservice", by)
 	if err == nil || !strings.Contains(err.Error(), "404") || !strings.Contains(err.Error(), "Not Found") {
 		t.Errorf("err = %v", err)
 	}
 	if strings.Contains(err.Error(), token) {
 		t.Error("error carries the token")
+	}
+}
+
+func TestRunReportsWhatToFollow(t *testing.T) {
+	_, r := newFake(t)
+	res, err := r.Run(context.Background(), "trigger-oom", "recommendationservice", by)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Key != "boutique-prod/recommendationservice" || res.Cluster != "boutique-prod" || res.Commit != "c1" {
+		t.Fatalf("result = %+v", res)
 	}
 }

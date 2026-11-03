@@ -34,6 +34,9 @@ const (
 	EventWorkerUpdated    = "worker_updated"
 	EventAtespaceAdded    = "atespace_added"
 	EventAtespaceRemoved  = "atespace_removed"
+	// EventClusterSynced: a cluster's Config Sync applied a new fleet-repo
+	// commit (Cluster, Commit; Atespace carries the cluster as it is now).
+	EventClusterSynced = "cluster_synced"
 )
 
 // Signal events: what the agents and people did about the fleet, from Slack
@@ -115,6 +118,10 @@ type Event struct {
 	TS        string   `json:"ts,omitempty"`
 	Permalink string   `json:"permalink,omitempty"`
 	Options   []Option `json:"options,omitempty"`
+
+	// Commit is a fleet-repo SHA: the one an action pushed, or the one a
+	// cluster's Config Sync has applied (EventClusterSynced).
+	Commit string `json:"commit,omitempty"`
 }
 
 // Option is one of a triage report's fixes.

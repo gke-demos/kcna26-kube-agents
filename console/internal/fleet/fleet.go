@@ -169,6 +169,9 @@ type clusterState struct {
 	client  kubernetes.Interface
 	err     error // from connect
 	agents  []model.Agent
+	// syncCommit is the last fleet-repo commit its Config Sync reported
+	// applied; kept across a failed read.
+	syncCommit string
 }
 
 // poller runs the polling loop. list and connect are swapped out in tests.
@@ -240,7 +243,7 @@ func (p *poller) cycle(ctx context.Context) {
 	actors := make(map[string][]model.Agent, len(p.clusters))
 	for i, c := range p.clusters {
 		names[i] = c.Name
-		atespaces[i] = model.Atespace{Name: c.Name, CreateTime: c.Created}
+		atespaces[i] = model.Atespace{Name: c.Name, CreateTime: c.Created, SyncCommit: p.states[c.Name].syncCommit}
 		actors[c.Name] = p.states[c.Name].agents
 	}
 	p.sink.Apply(collector.Update{
@@ -297,6 +300,13 @@ func (p *poller) poll(ctx context.Context, st *clusterState) ([]model.Agent, err
 		sets []appsv1.StatefulSet
 		pods []corev1.Pod
 	)
+	if c.Name != p.o.Hub {
+		// Best effort: a cluster without Config Sync, or a failed read, keeps
+		// the last commit and never fails the workload poll.
+		if commit, err := readSyncCommit(ctx, st.client); err == nil && commit != "" {
+			st.syncCommit = commit
+		}
+	}
 	g, gctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		l, err := st.client.AppsV1().Deployments(ns).List(gctx, metav1.ListOptions{})

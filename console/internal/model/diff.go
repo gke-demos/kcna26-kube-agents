@@ -76,9 +76,12 @@ func Diff(prev, next *World) []Event {
 	var evs []Event
 
 	for _, name := range sortedKeys(next.Atespaces) {
-		if _, ok := prev.Atespaces[name]; !ok {
-			a := next.Atespaces[name]
+		old, ok := prev.Atespaces[name]
+		a := next.Atespaces[name]
+		if !ok {
 			evs = append(evs, Event{Type: EventAtespaceAdded, Key: name, Atespace: &a})
+		} else if a.SyncCommit != old.SyncCommit && a.SyncCommit != "" {
+			evs = append(evs, Event{Type: EventClusterSynced, Key: name, Cluster: name, Commit: a.SyncCommit, Atespace: &a})
 		}
 	}
 

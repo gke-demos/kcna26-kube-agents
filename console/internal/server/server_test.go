@@ -43,9 +43,9 @@ func (f *fakeActions) Actions() []ActionSpec {
 	return []ActionSpec{{Name: "trigger-oom", Targets: []string{"recommendationservice"}}, {Name: "reset"}}
 }
 
-func (f *fakeActions) Run(_ context.Context, action, target, by string) (string, string, error) {
+func (f *fakeActions) Run(_ context.Context, action, target, by string) (ActionResult, error) {
 	f.ran = append(f.ran, action+"/"+target+"/"+by)
-	return "done", "https://example.com/commit", nil
+	return ActionResult{Title: "done", Link: "https://example.com/commit/abc123", Key: "c/" + target, Commit: "abc123"}, nil
 }
 
 func newTestServer() (*Server, *fakeActions, *collector.Store) {

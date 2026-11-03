@@ -203,3 +203,19 @@ func TestDiffWorkers(t *testing.T) {
 		t.Fatalf("events = %v, want %v", got, want)
 	}
 }
+
+func TestDiffClusterSynced(t *testing.T) {
+	prev := world()
+	prev.Atespaces["boutique-prod"] = Atespace{Name: "boutique-prod", SyncCommit: "aaa"}
+	next := world()
+	next.Atespaces["boutique-prod"] = Atespace{Name: "boutique-prod", SyncCommit: "bbb"}
+	evs := Diff(prev, next)
+	if len(evs) != 1 || evs[0].Type != EventClusterSynced || evs[0].Cluster != "boutique-prod" || evs[0].Commit != "bbb" {
+		t.Fatalf("events = %+v", evs)
+	}
+	// A cluster that loses its commit (a failed read reports none) is not a sync.
+	next.Atespaces["boutique-prod"] = Atespace{Name: "boutique-prod"}
+	if evs := Diff(prev, next); len(evs) != 0 {
+		t.Fatalf("expected no events, got %v", types(evs))
+	}
+}

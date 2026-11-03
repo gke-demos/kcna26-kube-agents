@@ -69,12 +69,24 @@ type ActionSpec struct {
 	Targets []string `json:"targets,omitempty"`
 }
 
+// ActionResult is what one button press did.
+type ActionResult struct {
+	// Title is one line for the feed; Link the commit's URL.
+	Title string `json:"title"`
+	Link  string `json:"link,omitempty"`
+	// Key ("cluster/workload") and Cluster name what the press aimed at;
+	// empty for reset. Commit is the SHA Config Sync will apply, so the
+	// console can follow the press until the cluster has it.
+	Key     string `json:"key,omitempty"`
+	Cluster string `json:"cluster,omitempty"`
+	Commit  string `json:"commit,omitempty"`
+}
+
 // Actioner runs the buttons.
 type Actioner interface {
 	Actions() []ActionSpec
-	// Run performs action on target (may be empty) on behalf of by. It
-	// returns a one-line result and a link (a commit, say) for the feed.
-	Run(ctx context.Context, action, target, by string) (title, link string, err error)
+	// Run performs action on target (may be empty) on behalf of by.
+	Run(ctx context.Context, action, target, by string) (ActionResult, error)
 }
 
 // Options configures the server.
@@ -292,8 +304,11 @@ func (s *Server) runAction(w http.ResponseWriter, r *http.Request, who string) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), ActionTimeout)
 	defer cancel()
-	title, link, err := s.o.Actions.Run(ctx, name, req.Target, who)
-	ev := model.Event{Type: model.EventAction, Title: title, Link: link, Actor: who, Reason: name}
+	res, err := s.o.Actions.Run(ctx, name, req.Target, who)
+	ev := model.Event{
+		Type: model.EventAction, Title: res.Title, Link: res.Link, Actor: who, Reason: name,
+		Key: res.Key, Cluster: res.Cluster, Commit: res.Commit,
+	}
 	if err != nil {
 		slog.Warn("action failed", "action", name, "target", req.Target, "by", who, "err", err)
 		// A partial failure (reset committed, a PR close failed) still has a
@@ -308,9 +323,9 @@ func (s *Server) runAction(w http.ResponseWriter, r *http.Request, who string) {
 		http.Error(w, ev.Title, code)
 		return
 	}
-	slog.Info("action", "action", name, "target", req.Target, "by", who, "result", title)
+	slog.Info("action", "action", name, "target", req.Target, "by", who, "result", res.Title, "commit", res.Commit)
 	s.o.Store.Emit(ev)
-	writeJSON(w, http.StatusOK, map[string]string{"title": title, "link": link})
+	writeJSON(w, http.StatusOK, res)
 }
 
 // sameOrigin requires a browser POST to come from this host or an allowed one.

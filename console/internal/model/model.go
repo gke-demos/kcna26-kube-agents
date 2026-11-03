@@ -188,10 +188,13 @@ type Worker struct {
 	Actors []string `json:"actors,omitempty"`
 }
 
-// Atespace is a Substrate atespace.
+// Atespace is a Substrate atespace; in fleet-scope, a cluster.
 type Atespace struct {
 	Name       string     `json:"name"`
 	CreateTime *time.Time `json:"createTime,omitempty"`
+	// SyncCommit is the fleet-repo commit the cluster's Config Sync has
+	// applied (empty when it runs none, as on the hub).
+	SyncCommit string `json:"syncCommit,omitempty"`
 }
 
 // SourceStatus reports the health of one poller.

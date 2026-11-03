@@ -122,22 +122,24 @@ const (
 	// not match the v0.10.70 it is turned into.
 	imageRegexFmt = `/%s:%s([^\w.-]|$)`
 
-	pathContents    = "/repos/%s/contents/%s"
-	pathRef         = "/repos/%s/git/ref/%s"
-	pathRefs        = "/repos/%s/git/refs/%s"
-	pathCommit      = "/repos/%s/git/commits/%s"
-	pathCommits     = "/repos/%s/git/commits"
-	pathTree        = "/repos/%s/git/trees/%s"
-	pathTrees       = "/repos/%s/git/trees"
-	pathTag         = "/repos/%s/git/tags/%s"
-	pathPulls       = "/repos/%s/pulls?state=%s&per_page=%d&page=%d"
-	pathPull        = "/repos/%s/pulls/%d"
-	pathIssueCmts   = "/repos/%s/issues/%d/comments"
-	refHeadsPrefix  = "heads/"
-	refTagsPrefix   = "tags/"
-	contentsRefArg  = "?ref="
-	pathSeparator   = "/"
-	encodingBase64  = "base64"
+	pathContents   = "/repos/%s/contents/%s"
+	pathRef        = "/repos/%s/git/ref/%s"
+	pathRefs       = "/repos/%s/git/refs/%s"
+	pathCommit     = "/repos/%s/git/commits/%s"
+	pathCommits    = "/repos/%s/git/commits"
+	pathTree       = "/repos/%s/git/trees/%s"
+	pathTrees      = "/repos/%s/git/trees"
+	pathTag        = "/repos/%s/git/tags/%s"
+	pathPulls      = "/repos/%s/pulls?state=%s&per_page=%d&page=%d"
+	pathPull       = "/repos/%s/pulls/%d"
+	pathIssueCmts  = "/repos/%s/issues/%d/comments"
+	refHeadsPrefix = "heads/"
+	refTagsPrefix  = "tags/"
+	contentsRefArg = "?ref="
+	pathSeparator  = "/"
+	encodingBase64 = "base64"
+	// commitURLMarker precedes the SHA in a commit's html_url.
+	commitURLMarker = "/commit/"
 	subjectBodyGlue = "\n\n"
 )
 
@@ -221,8 +223,23 @@ func (r *Runner) Actions() []server.ActionSpec {
 	}
 }
 
-// Run implements server.Actioner.
-func (r *Runner) Run(ctx context.Context, action, target, by string) (string, string, error) {
+// Run implements server.Actioner: do, plus what the console needs to follow
+// the press (the workload, its cluster and the commit Config Sync will apply).
+func (r *Runner) Run(ctx context.Context, action, target, by string) (server.ActionResult, error) {
+	title, link, err := r.do(ctx, action, target, by)
+	res := server.ActionResult{Title: title, Link: link}
+	if i := strings.LastIndex(link, commitURLMarker); i >= 0 {
+		res.Commit = link[i+len(commitURLMarker):]
+	}
+	if w, ok := workloads[target]; ok && target != "" {
+		res.Cluster = w.cluster
+		res.Key = w.cluster + pathSeparator + target
+	}
+	return res, err
+}
+
+// do runs one action and returns its title and commit link.
+func (r *Runner) do(ctx context.Context, action, target, by string) (string, string, error) {
 	var targets []string
 	switch action {
 	case ActionOOM:
