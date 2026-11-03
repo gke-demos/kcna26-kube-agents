@@ -33,7 +33,7 @@ export const TOKENS = [
   'team.saturation', 'team.lightness', 'team.alpha',
   'states.running', 'states.changing', 'states.suspended', 'states.crashed', 'states.pending',
   'effects.wake', 'effects.suspend', 'effects.crash', 'effects.beam', 'effects.removed',
-  'effects.alert', 'effects.triage', 'effects.pr', 'effects.merge',
+  'effects.alert', 'effects.triage', 'effects.pr', 'effects.merge', 'effects.action',
   'marker.select', 'marker.hover',
   'glow.additive', 'glow.emissive', 'glow.ambient', 'glow.diffuse', 'glow.hemi', 'glow.gloss', 'glow.ink', 'glow.occlusion',
   'bloom.strength', 'bloom.radius', 'bloom.threshold',
@@ -71,7 +71,7 @@ export const THEMES = [
     links: { color: '#c873b0', alpha: 0.1, highlight: '#ffb3e6', flow: '#ffc2ec', focusAlpha: 0.85 },
     team: { saturation: 0.55, lightness: 0.62, alpha: 0.24 },
     states: { running: '#9a6cf2', changing: '#b09000', suspended: '#4b3f6b', crashed: '#e8306b', pending: '#ab98d0' },
-    effects: { wake: '#c9a6ff', suspend: '#8a78c0', crash: '#e8306b', beam: '#d7c2ff', removed: '#7f6fa6' , alert: '#ffb347', triage: '#ff7ac8', pr: '#7fd8ff', merge: '#b8f28a' },
+    effects: { wake: '#c9a6ff', suspend: '#8a78c0', crash: '#e8306b', beam: '#d7c2ff', removed: '#7f6fa6' , alert: '#ffb347', triage: '#ff7ac8', pr: '#7fd8ff', merge: '#b8f28a', action: '#ffe066' },
     marker: { select: '#ffffff', hover: '#ffb3e6' },
     glow: { additive: true, emissive: 1.3, ambient: 0.1, diffuse: 0.45, hemi: 0.22, gloss: 0, ink: 0, occlusion: 0.15 },
     bloom: { strength: 0.95, radius: 0.55, threshold: 0.5 },
@@ -112,7 +112,7 @@ export const THEMES = [
     links: { color: '#2bb8ad', alpha: 0.11, highlight: '#9ff7ef', flow: '#a6fff6', focusAlpha: 0.85 },
     team: { saturation: 0.55, lightness: 0.6, alpha: 0.24 },
     states: { running: '#0fa395', changing: '#8f7bff', suspended: '#2c3e63', crashed: '#ec3d5a', pending: '#8ca3c4' },
-    effects: { wake: '#5ff2e6', suspend: '#5f7fbf', crash: '#ec3d5a', beam: '#8ff7ee', removed: '#5d6c8c' , alert: '#ffb347', triage: '#c9b8ff', pr: '#7fc8ff', merge: '#6ff2a0' },
+    effects: { wake: '#5ff2e6', suspend: '#5f7fbf', crash: '#ec3d5a', beam: '#8ff7ee', removed: '#5d6c8c' , alert: '#ffb347', triage: '#c9b8ff', pr: '#7fc8ff', merge: '#6ff2a0', action: '#ffe45c' },
     marker: { select: '#ffffff', hover: '#9ff7ef' },
     glow: { additive: true, emissive: 1.25, ambient: 0.1, diffuse: 0.45, hemi: 0.22, gloss: 0, ink: 0, occlusion: 0.15 },
     bloom: { strength: 0.8, radius: 0.5, threshold: 0.5 },
@@ -153,7 +153,7 @@ export const THEMES = [
     links: { color: '#6f9a1f', alpha: 0.07, highlight: '#e2ff9a', flow: '#c6ff3d', focusAlpha: 0.8 },
     team: { saturation: 0.5, lightness: 0.58, alpha: 0.24 },
     states: { running: '#6aa61a', changing: '#2f95c8', suspended: '#3a3a44', crashed: '#e83a8a', pending: '#9c9ca8' },
-    effects: { wake: '#b6f25a', suspend: '#70707e', crash: '#e83a8a', beam: '#d8ff8a', removed: '#5a5a66' , alert: '#ffb000', triage: '#ff8ad8', pr: '#5fc8ff', merge: '#c6ff3d' },
+    effects: { wake: '#b6f25a', suspend: '#70707e', crash: '#e83a8a', beam: '#d8ff8a', removed: '#5a5a66' , alert: '#ffb000', triage: '#ff8ad8', pr: '#5fc8ff', merge: '#c6ff3d', action: '#fff27a' },
     marker: { select: '#ffffff', hover: '#e6ffa8' },
     glow: { additive: true, emissive: 0.95, ambient: 0.12, diffuse: 0.5, hemi: 0.2, gloss: 0, ink: 0, occlusion: 0.2 },
     bloom: { strength: 0.55, radius: 0.3, threshold: 0.62 },
@@ -194,7 +194,7 @@ export const THEMES = [
     links: { color: '#b86ef0', alpha: 0.35, highlight: '#ff5fa2', flow: '#b86ef0', focusAlpha: 0.9 },
     team: { saturation: 0.65, lightness: 0.72, alpha: 0.55 },
     states: { running: '#7b3fe4', changing: '#a87a00', suspended: '#cdbfe6', crashed: '#d11f6f', pending: '#6c5790' },
-    effects: { wake: '#7b3fe4', suspend: '#a593cc', crash: '#d11f6f', beam: '#b38cf0', removed: '#b3a6c8' , alert: '#d97000', triage: '#ff5fa2', pr: '#1f7ae0', merge: '#1f9d55' },
+    effects: { wake: '#7b3fe4', suspend: '#a593cc', crash: '#d11f6f', beam: '#b38cf0', removed: '#b3a6c8' , alert: '#d97000', triage: '#ff5fa2', pr: '#1f7ae0', merge: '#1f9d55', action: '#0f9fb5' },
     marker: { select: '#2b1645', hover: '#ff5fa2' },
     glow: { additive: false, emissive: 0.1, ambient: 0.66, diffuse: 0.36, hemi: 0.1, gloss: 0.3, ink: 0.25, occlusion: 0.3 },
     bloom: { strength: 0, radius: 0.4, threshold: 0.95 },
@@ -235,7 +235,7 @@ export const THEMES = [
     links: { color: '#3a5bd9', alpha: 0.3, highlight: '#ff48b0', flow: '#3a5bd9', focusAlpha: 0.9 },
     team: { saturation: 0.55, lightness: 0.7, alpha: 0.55 },
     states: { running: '#009a93', changing: '#3a5bd9', suspended: '#c9c0b0', crashed: '#e5392b', pending: '#686157' },
-    effects: { wake: '#009a93', suspend: '#a39a8a', crash: '#e5392b', beam: '#3a5bd9', removed: '#b0a796' , alert: '#d97000', triage: '#ff48b0', pr: '#2b6fd6', merge: '#3d9a2b' },
+    effects: { wake: '#009a93', suspend: '#a39a8a', crash: '#e5392b', beam: '#3a5bd9', removed: '#b0a796' , alert: '#d97000', triage: '#ff48b0', pr: '#2b6fd6', merge: '#3d9a2b', action: '#7a3fd0' },
     marker: { select: '#1f1d1a', hover: '#ff48b0' },
     glow: { additive: false, emissive: 0.04, ambient: 0.74, diffuse: 0.28, hemi: 0.06, gloss: 0, ink: 0.6, occlusion: 0.12 },
     bloom: { strength: 0, radius: 0.4, threshold: 0.95 },
@@ -276,7 +276,7 @@ export const THEMES = [
     links: { color: '#0062e6', alpha: 0.25, highlight: '#7c3aed', flow: '#0062e6', focusAlpha: 0.9 },
     team: { saturation: 0.6, lightness: 0.72, alpha: 0.55 },
     states: { running: '#0062e6', changing: '#9a7a00', suspended: '#b7c6da', crashed: '#d11f6f', pending: '#536889' },
-    effects: { wake: '#0062e6', suspend: '#8ea3c2', crash: '#d11f6f', beam: '#5b9cf5', removed: '#a6b4c8' , alert: '#d97a00', triage: '#7c3aed', pr: '#0b8bd9', merge: '#1f9d55' },
+    effects: { wake: '#0062e6', suspend: '#8ea3c2', crash: '#d11f6f', beam: '#5b9cf5', removed: '#a6b4c8' , alert: '#d97a00', triage: '#7c3aed', pr: '#0b8bd9', merge: '#1f9d55', action: '#00a3a3' },
     marker: { select: '#0f2340', hover: '#7c3aed' },
     glow: { additive: false, emissive: 0.1, ambient: 0.66, diffuse: 0.36, hemi: 0.1, gloss: 0.2, ink: 0.3, occlusion: 0.25 },
     bloom: { strength: 0, radius: 0.4, threshold: 0.95 },
@@ -317,7 +317,7 @@ export const THEMES = [
     links: { color: '#1a73e8', alpha: 0.2, highlight: '#1a73e8', flow: '#4285f4', focusAlpha: 0.9 },
     team: { saturation: 0.6, lightness: 0.72, alpha: 0.6 },
     states: { running: '#188038', changing: '#9334e6', suspended: '#bdc1c6', crashed: '#d93025', pending: '#5f6368' },
-    effects: { wake: '#188038', suspend: '#9aa0a6', crash: '#d93025', beam: '#1a73e8', removed: '#bdc1c6' , alert: '#e37400', triage: '#9334e6', pr: '#1a73e8', merge: '#188038' },
+    effects: { wake: '#188038', suspend: '#9aa0a6', crash: '#d93025', beam: '#1a73e8', removed: '#bdc1c6' , alert: '#e37400', triage: '#9334e6', pr: '#1a73e8', merge: '#188038', action: '#129eaf' },
     marker: { select: '#217bfe', hover: '#a770ef' },
     glow: { additive: false, emissive: 0.05, ambient: 0.7, diffuse: 0.32, hemi: 0.06, gloss: 0.06, ink: 0.18, occlusion: 0.18 },
     bloom: { strength: 0, radius: 0.4, threshold: 0.95 },
@@ -360,7 +360,7 @@ export const THEMES = [
     links: { color: '#8ab4f8', alpha: 0.1, highlight: '#8ab4f8', flow: '#aecbfa', focusAlpha: 0.85 },
     team: { saturation: 0.5, lightness: 0.6, alpha: 0.26 },
     states: { running: '#34a853', changing: '#af5cf7', suspended: '#5f6368', crashed: '#e52592', pending: '#9aa0a6' },
-    effects: { wake: '#81c995', suspend: '#9aa0a6', crash: '#e52592', beam: '#8ab4f8', removed: '#5f6368' , alert: '#fdd663', triage: '#c58af9', pr: '#8ab4f8', merge: '#81c995' },
+    effects: { wake: '#81c995', suspend: '#9aa0a6', crash: '#e52592', beam: '#8ab4f8', removed: '#5f6368' , alert: '#fdd663', triage: '#c58af9', pr: '#8ab4f8', merge: '#81c995', action: '#78d9ec' },
     marker: { select: '#8ab4f8', hover: '#a770ef' },
     glow: { additive: true, emissive: 0.5, ambient: 0.16, diffuse: 0.5, hemi: 0.22, gloss: 0, ink: 0, occlusion: 0.15 },
     bloom: { strength: 0.3, radius: 0.3, threshold: 0.75 },
@@ -475,6 +475,8 @@ export function cssVars(theme) {
   const v = { '--bg': theme.scene.background };
   for (const [k, val] of Object.entries(theme.ui)) v[`--${kebab(k)}`] = val;
   for (const cls of ['running', 'transition', 'suspended', 'crashed', 'pending']) v[`--${cls}`] = classColor(theme, cls);
+  // A console press's color (the tracker card, its 3D arc).
+  v['--fx-action'] = theme.effects.action;
   // Glyph ink on each swatch, picked for contrast.
   for (const k of Object.keys(theme.ui).filter((x) => x.startsWith('ev'))) v[`--${kebab(k)}-ink`] = inkOn(theme.ui[k]);
   for (const cls of ['running', 'transition', 'suspended', 'crashed']) v[`--${cls}-ink`] = inkOn(classColor(theme, cls));

@@ -54,6 +54,11 @@ export const LINKS = [
   { name: 'Bank of Anthos', url: 'https://bank.example.com' },
 ];
 
+/** The cluster kube-agents runs on (no Config Sync). */
+const HUB = 'kube-agents-hub';
+/** The fleet repo commit the clusters start on. */
+const BASELINE_COMMIT = '5d0b1f2c9e8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c';
+
 /** Seconds between scripted incidents. */
 export const INCIDENT_EVERY = 60;
 /** The scripted incident's target. */
@@ -130,6 +135,26 @@ export function imageReport({ name, ns, pod, badImage, good }) {
   ].join('\n');
 }
 
+/** The report for pods no node can fit. */
+export function unschedReport({ name, ns, pod }) {
+  const now = evidenceTime();
+  return [
+    "*What's wrong*",
+    `State at ${utcClock()} UTC: The ${name} pod ${ns}/${pod} is Pending: it requests 32 CPUs and no node in the pool can fit it.`,
+    '*Why*',
+    '• The CPU request went from `100m` to `32` in the fleet repo a few minutes ago; the largest node has 8 allocatable CPUs.',
+    '*What to do*',
+    '• *Option A (Revert the CPU request to 100m):* Put the request back to the value that ran before the change.',
+    '• *Option B (Add a 32-CPU node pool):* Add a node pool big enough for the new request.',
+    '• :white_check_mark: *Recommended: Option A* — the revert restores the last known-good state; nothing in the service needs 32 CPUs.',
+    "• *To authorize:* reply *'apply'* to open a GitOps Pull Request with the recommended fix, or name one directly with *'apply Option A'* / *'apply Option B'*.",
+    `:link: <${CONSOLE_GKE}|GKE Workloads> | <${CONSOLE_LOGS}|Cloud Logs>`,
+    '*Evidence for verified claims*',
+    `The pod cannot be scheduled. (exit 0, ${now})`,
+    `${FENCE}$ kubectl get events -n ${ns} --field-selector involvedObject.name=${pod}\nWarning  FailedScheduling  0/3 nodes are available: 3 Insufficient cpu.${FENCE}`,
+  ].join('\n');
+}
+
 function slackTs(ms) {
   return `${Math.floor(ms / 1000)}.${String(ms % 1000).padStart(3, '0')}100`;
 }
@@ -140,7 +165,8 @@ export function fleetSnapshot(now = Date.now()) {
   const atespaces = [];
   const agents = [];
   for (const [cluster, c] of Object.entries(FLEET)) {
-    atespaces.push({ name: cluster });
+    // The workload clusters run Config Sync on the fleet repo; the hub does not.
+    atespaces.push(cluster === HUB ? { name: cluster } : { name: cluster, syncCommit: BASELINE_COMMIT });
     for (const name of c.workloads) {
       const replicas = name === 'frontend' || name === 'a2a-gateway' ? 2 : 1;
       agents.push({
@@ -206,18 +232,71 @@ export function fleetSnapshot(now = Date.now()) {
   };
 }
 
-/** The actions the console's buttons offer (GET api/actions). */
+/** The actions the console's buttons offer (GET api/actions), named as the backend names them. */
 export function fleetActions() {
   return [
-    { name: 'oom', title: 'Cause an OOMKill', targets: ['recommendationservice', 'cartservice', 'currencyservice'] },
-    { name: 'bad-image', title: 'Push a bad image', targets: ['frontend', 'checkoutservice', 'balancereader'] },
+    { name: 'trigger-oom', title: 'Cause an OOMKill', targets: ['recommendationservice', 'cartservice', 'currencyservice'] },
+    { name: 'trigger-badimage', title: 'Push a bad image', targets: ['frontend', 'checkoutservice', 'balancereader'] },
+    { name: 'trigger-unschedulable', title: 'Make it unschedulable', targets: ['productcatalogservice', 'cartservice', 'contacts'] },
     { name: 'reset', title: 'Reset the fleet' },
   ];
 }
 
+/** The failure each action causes. */
+const ACTION_REASON = { 'trigger-oom': 'OOMKilled', 'trigger-badimage': 'ImagePullBackOff', 'trigger-unschedulable': 'Unschedulable' };
+
+/** Seconds from a press to its commit landing on the cluster (Config Sync, ≈30–90 s for real). */
+const PRESS_SYNC = 3;
+/** Seconds from a press to the workload failing. */
+const PRESS_FAIL = 5;
+/** Seconds the watcher waits before alerting, per failure (OOM debounce ≈3–5 min, image ≈10–20 s, unschedulable ≈2–3 min for real). */
+const PRESS_WATCH = { OOMKilled: 15, ImagePullBackOff: 3, Unschedulable: 10 };
+/** Seconds the simulated person takes to choose the fix after the report. */
+const PRESS_CHOOSE = 10;
+/** Seconds from a merge to Config Sync applying it. */
+const MERGE_SYNC = 3;
+/** Seconds from a reset to each cluster syncing it, and to the workloads being back. */
+const RESET_SYNC = [3, 4];
+const RESET_HEAL = 6;
+/** How long the fake POST takes (ms; the real one commits through the GitHub API). */
+const POST_MS = 1500;
+
+/** The scripted incident's timeline (seconds after it starts; no commit, no rollout). */
+const SCRIPTED = { rollout: -1, fail: 0, alert: 3, notes: [6, 10, 14], report: 19, fix: 25, apply: 27, pr: 29, prNote: 31, merge: 37, resume: 41, healthy: 46 };
+
+/** A press's timeline (seconds after the press): compressed, in proportion to the real one. */
+export function pressTimeline(reason) {
+  const alert = PRESS_FAIL + (PRESS_WATCH[reason] ?? PRESS_WATCH.OOMKilled);
+  const report = alert + 21;
+  const fix = report + PRESS_CHOOSE;
+  return {
+    rollout: reason === 'Unschedulable' ? -1 : PRESS_SYNC + 0.5,
+    fail: PRESS_FAIL,
+    alert,
+    notes: [alert + 5, alert + 10, alert + 15],
+    report,
+    fix,
+    apply: fix + 2,
+    pr: fix + 4,
+    prNote: fix + 6,
+    merge: fix + 12,
+    resume: fix + 12 + MERGE_SYNC + 1,
+    healthy: fix + 12 + MERGE_SYNC + 6,
+  };
+}
+
+/** A fake 40-hex fleet-repo SHA. */
+export function fakeSha() {
+  let s = '';
+  while (s.length < 40) s += Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
+  return s.slice(0, 40);
+}
+
 /**
  * Same interface as Stream; also runs the fake action API (actions(),
- * runAction()). Timers drive the scripted incident; reset cancels it.
+ * runAction()). Timers drive the incidents; reset cancels them. The
+ * scripted incident loop runs on its own (no commit, no tracker); a press
+ * commits, syncs and plays the whole chain on its target.
  */
 export class FleetSynthStream {
   constructor(handlers, { every = INCIDENT_EVERY, first = 4 } = {}) {
@@ -225,8 +304,10 @@ export class FleetSynthStream {
     this.snap = fleetSnapshot();
     this.seq = this.snap.seq;
     this.agents = new Map(this.snap.agents.map((a) => [`${a.atespace}/${a.name}`, a]));
+    this.atespaces = new Map(this.snap.atespaces.map((a) => [a.name, a]));
     this.timers = new Set();
     this.incident = null;
+    this.pressed = false;
     this.pr = 1;
     setTimeout(() => {
       this.h.onStatus('live');
@@ -245,6 +326,13 @@ export class FleetSynthStream {
     }, seconds * 1000);
     this.timers.add(t);
     return t;
+  }
+
+  cancelAll() {
+    for (const t of this.timers) clearTimeout(t);
+    this.timers.clear();
+    this.incident = null;
+    this.pressed = false;
   }
 
   emit(events) {
@@ -271,26 +359,45 @@ export class FleetSynthStream {
     this.emit(evs);
   }
 
+  /** A cluster's Config Sync applied a commit. */
+  syncCluster(cluster, commit) {
+    const prev = this.atespaces.get(cluster);
+    if (!prev || prev.syncCommit === commit) return;
+    const atespace = { ...prev, syncCommit: commit };
+    this.atespaces.set(cluster, atespace);
+    this.emit([{ type: 'cluster_synced', key: cluster, cluster, commit, atespace }]);
+  }
+
+  /** Puts a workload back to its baseline. */
+  restore(key) {
+    const [cluster, name] = key.split('/');
+    const base = fleetSnapshot().agents.find((a) => a.atespace === cluster && a.name === name);
+    const cur = this.agents.get(key);
+    if (base && cur && (cur.state !== 'RUNNING' || cur.memoryLimit !== base.memoryLimit || cur.image !== base.image)) {
+      this.setWorkload(key, { ...base, stateSince: cur.stateSince, crash: undefined, reason: '' });
+    }
+  }
+
   /** A signal event about key (or the fleet when key is ''). */
   signal(type, key, title, extra = {}) {
     const [cluster] = key.split('/');
     this.emit([{ type, key, cluster, title, ...extra }]);
   }
 
-  /** The scripted incident on one workload: failing -> alert -> triage -> PR -> merged -> healthy. */
-  startIncident(key, reason) {
+  /**
+   * An incident on one workload: failing -> alert -> triage -> report ->
+   * fix chosen -> PR -> merged -> healthy, on the scripted timeline or a
+   * press's (which also rolls out the change and syncs the merge).
+   */
+  startIncident(key, reason, { press = false } = {}) {
     const a = this.agents.get(key);
     if (!a || this.incident) return;
     const [cluster, name] = key.split('/');
     const ns = FLEET[cluster]?.namespace || 'default';
-    const oom = reason === 'OOMKilled';
-    const pr = this.pr++;
-    const prLink = `${REPO}/pull/${pr}`;
-    const limit = a.memoryLimit || '256Mi';
-    const raised = `${Math.round((parseInt(limit, 10) * 2) / 50) * 50}Mi`;
-    const badImage = a.image.replace(/:[^:]+$/, ':v0.0.0-broken');
-    const pod = `${name}-659fd87c86-c7xjn`;
+    const t = press ? pressTimeline(reason) : SCRIPTED;
+    const story = incidentStory({ name, cluster, ns, a, reason, pr: this.pr++ });
     this.incident = key;
+    this.pressed = press;
     // Slack messages: the alert's ts is the thread; every message has its
     // own ts and permalink, as the backend's Slack poller sends them.
     let thread = '';
@@ -301,43 +408,19 @@ export class FleetSynthStream {
       this.signal(type, key, title, { actor: BOT, thread, ts, text, permalink, link: permalink, ...extra });
       return { ts, permalink };
     };
-    const card = (mark, step) => `${name} ${oom ? 'crashloop' : 'image pull failure'} in ${cluster} ${mark} ${step}`;
-    const options = oom
-      ? [
-          { letter: 'A', label: 'Scale to 2 replicas' },
-          { letter: 'B', label: `Increase to ${raised} with headroom`, recommended: true },
-        ]
-      : [
-          { letter: 'A', label: 'Revert to the last good tag', recommended: true },
-          { letter: 'B', label: 'Pin the image digest' },
-        ];
-    const pick = options.find((o) => o.recommended);
+    const { options, pick, prLink, pr } = story;
     let report = null;
     const steps = [
-      [0, () => this.setWorkload(key, {
-        state: 'CRASHED',
-        ready: 0,
-        reason,
-        crash: { message: oom ? `container ${name} was OOMKilled (limit ${limit}); 4 restarts in 3m` : `Back-off pulling image "${badImage}"`, time: new Date().toISOString() },
-        ...(oom ? {} : { image: badImage }),
-      })],
-      [3, () => say('alert', `${cluster}/${name}: ${reason}, ${oom ? '4 restarts in 3 minutes' : 'pods cannot pull their image'}`,
-        oom
-          ? `:rotating_light: *${name} in ${cluster} keeps crashing.* Looking now.\n\`${ns}/Pod/${pod}\` was OOMKilled 4 times in 3 minutes (limit \`${limit}\`).`
-          : `:rotating_light: *${name} in ${cluster} cannot pull its image.* Looking now.\n\`${ns}/Pod/${pod}\`: Back-off pulling image \`${badImage}\`.`)],
-      [6, () => say('triage', `Looking at ${name}: pod events, container status and the last hour of logs`, card('◌', `Triage ${ns}/Pod/${pod} (${oom ? 'BackOff' : 'ImagePullBackOff'}) on ${cluster}`))],
-      [10, () => say('triage', oom ? `Memory peaked at ${limit} against a ${limit} limit before every restart` : 'The tag v0.0.0-broken does not exist in the registry',
-        card('◌', oom ? `Memory peaked at *${limit}* against a \`${limit}\` limit before every restart (exit code 137).` : 'The tag `v0.0.0-broken` does not exist in the registry: `manifest unknown`.'))],
-      [14, () => say('triage', oom ? 'No image change since Tuesday; traffic from loadgenerator is up 3x' : 'The image changed 4 minutes ago in the fleet repo (commit 9f2c1ab)',
-        card('✓', oom ? 'No image change since Tuesday; traffic from `loadgenerator` is up 3x.' : 'The image changed 4 minutes ago in the fleet repo (commit `9f2c1ab`).'))],
-      [19, () => {
-        const text = oom ? oomReport({ name, ns, pod, limit, raised }) : imageReport({ name, ns, pod, badImage, good: a.image });
-        const title = oom ? `${name} is OOM-killed on every start: its ${limit} limit is too low under 3x traffic` : `${name} cannot start: the image tag v0.0.0-broken does not exist`;
-        report = { text, ...say('triage_report', title, text, { options, message: options.map((o) => `${o.letter}: ${o.label}`).join('\n') }) };
+      [t.rollout, () => this.setWorkload(key, { state: 'RESUMING', reason: 'Progressing', ready: 0, ...story.rollout })],
+      [t.fail, () => this.setWorkload(key, { state: story.state, ready: 0, reason, crash: { message: story.crash, time: new Date().toISOString() }, ...story.rollout })],
+      [t.alert, () => say('alert', story.alertTitle, story.alertText)],
+      ...story.notes.map((n, i) => [t.notes[i], () => say('triage', n.title, n.text)]),
+      [t.report, () => {
+        report = { text: story.report, ...say('triage_report', story.reportTitle, story.report, { options, message: options.map((o) => `${o.letter}: ${o.label}`).join('\n') }) };
       }],
       // Pressing a report's option button edits the report: the backend
       // re-emits the report's ts as fix_chosen, actor the person who pressed.
-      [25, () => this.signal('fix_chosen', key, `Option ${pick.letter}: ${pick.label}`, {
+      [t.fix, () => this.signal('fix_chosen', key, `Option ${pick.letter}: ${pick.label}`, {
         actor: ONCALL,
         thread,
         ts: report?.ts,
@@ -345,22 +428,21 @@ export class FleetSynthStream {
         permalink: report?.permalink,
         link: report?.permalink,
       })],
-      [27, () => say('triage', `Apply Option ${pick.letter}: ${pick.label}`, `Apply Option ${pick.letter}: ${pick.label} ◌ Opening a GitOps pull request in \`gke-demos/kcna26-fleet-gitops\``)],
-      [29, () => this.signal('pr_opened', key, `PR #${pr}: ${cluster}: ${oom ? `raise ${name} memory to ${raised}` : `revert ${name} image`}`, { actor: 'kube-agents[bot]', link: prLink })],
-      [31, () => say('triage', 'Fix PR opened',
-        `I opened PR #${pr} in kcna26-fleet-gitops. It's yours to review. ${oom ? `chore(${ns}): increase ${name} memory requests and limits to ${raised}` : `fix(${ns}): revert ${name} to its last good image`} <${prLink}|Pull Request #${pr}>`,
-        { link: prLink })],
-      [37, () => this.signal('pr_merged', key, `PR #${pr} merged; Config Sync is applying it to ${cluster}`, { actor: ONCALL, link: prLink })],
-      [41, () => this.setWorkload(key, { state: 'RESUMING', reason: 'Progressing', crash: undefined, ...(oom ? { memoryLimit: raised } : { image: FLEET[cluster].image(name) }) })],
-      [46, () => {
+      [t.apply, () => say('triage', `Apply Option ${pick.letter}: ${pick.label}`, `Apply Option ${pick.letter}: ${pick.label} ◌ Opening a GitOps pull request in \`gke-demos/kcna26-fleet-gitops\``)],
+      [t.pr, () => this.signal('pr_opened', key, `PR #${pr}: ${cluster}: ${story.prTitle}`, { actor: 'kube-agents[bot]', link: prLink })],
+      [t.prNote, () => say('triage', 'Fix PR opened', `I opened PR #${pr} in kcna26-fleet-gitops. It's yours to review. ${story.prCommit} <${prLink}|Pull Request #${pr}>`, { link: prLink })],
+      [t.merge, () => this.signal('pr_merged', key, `PR #${pr} merged; Config Sync is applying it to ${cluster}`, { actor: ONCALL, link: prLink })],
+      [press ? t.merge + MERGE_SYNC : -1, () => this.syncCluster(cluster, fakeSha())],
+      [t.resume, () => this.setWorkload(key, { state: 'RESUMING', reason: 'Progressing', crash: undefined, ...story.fixed })],
+      [t.healthy, () => {
         const n = this.agents.get(key).replicas;
         this.setWorkload(key, { state: 'RUNNING', ready: n, reason: '' });
-        say('chat', `${name} is healthy again; closing the incident`,
-          `:white_check_mark: *${name} is healthy again.* ${n}/${n} ready ${oom ? `on the new ${raised} limit` : 'on the last good image'}, no restarts for 5 minutes. Closing the incident.`);
+        say('chat', `${name} is healthy again; closing the incident`, `:white_check_mark: *${name} is healthy again.* ${n}/${n} ready ${story.healthyWhy}, no restarts for 5 minutes. Closing the incident.`);
         this.incident = null;
+        this.pressed = false;
       }],
     ];
-    for (const [s, fn] of steps) this.later(s, fn);
+    for (const [s, fn] of steps) if (s >= 0) this.later(s, fn);
   }
 
   /** GET api/actions. */
@@ -368,37 +450,130 @@ export class FleetSynthStream {
     return fleetActions();
   }
 
-  /** POST api/actions/<name>: {title, link}, or throws with the error text. */
+  /** POST api/actions/<name>: {title, link, key, cluster, commit} as the backend answers, or throws with the error text. */
   async runAction(name, target) {
-    await new Promise((r) => setTimeout(r, 700));
+    await new Promise((r) => setTimeout(r, POST_MS));
     const spec = fleetActions().find((a) => a.name === name);
     if (!spec) throw new Error('no such action');
+    const commit = fakeSha();
+    const link = `${REPO}/commit/${commit}`;
     let title;
-    const link = `${REPO}/commit/${Math.floor(Math.random() * 0xfffffff).toString(16).padStart(7, '0')}`;
+    let key = '';
+    let cluster = '';
     if (name === 'reset') {
-      for (const t of this.timers) clearTimeout(t);
-      this.timers.clear();
-      this.incident = null;
-      const fresh = fleetSnapshot();
-      for (const a of fresh.agents) {
-        const key = `${a.atespace}/${a.name}`;
-        const cur = this.agents.get(key);
-        if (cur && (cur.state !== 'RUNNING' || cur.memoryLimit !== a.memoryLimit || cur.image !== a.image)) this.setWorkload(key, { ...a, stateSince: cur.stateSince, crash: undefined, reason: '' });
-      }
-      title = 'Reset the fleet to the demo baseline';
+      this.cancelAll();
+      title = 'Reset the demo: restored the baseline, closed 1 pull request';
+      const clusters = Object.keys(FLEET).filter((c) => this.atespaces.get(c)?.syncCommit);
+      clusters.forEach((c, i) => this.later(RESET_SYNC[i % RESET_SYNC.length], () => this.syncCluster(c, commit)));
+      this.later(RESET_HEAL, () => {
+        for (const k of this.agents.keys()) this.restore(k);
+      });
     } else {
       if (!target || !spec.targets.includes(target)) throw new Error(`pick a target for ${spec.title}`);
-      const key = [...this.agents.keys()].find((k) => k.endsWith(`/${target}`));
-      if (this.incident) throw new Error(`an incident is already running on ${this.incident.split('/')[1]}`);
-      title = name === 'oom' ? `Lowered ${target}'s memory limit (it will OOM under load)` : `Pushed a bad image tag for ${target}`;
-      this.later(2, () => this.startIncident(key, name === 'oom' ? 'OOMKilled' : 'ImagePullBackOff'));
+      key = [...this.agents.keys()].find((k) => k.endsWith(`/${target}`));
+      if (this.incident && this.pressed) throw new Error(`an incident is already running on ${this.incident.split('/')[1]}`);
+      // A press takes over from the scripted loop's incident.
+      if (this.incident) {
+        const prev = this.incident;
+        this.cancelAll();
+        this.restore(prev);
+      }
+      cluster = key.split('/')[0];
+      const reason = ACTION_REASON[name];
+      title = reason === 'OOMKilled' ? `Squeezed ${target}'s memory limit (it will OOM under load)` : reason === 'ImagePullBackOff' ? `Rolled out a missing image tag for ${target}` : `Asked for 32 CPUs for ${target} (no node fits it)`;
+      this.later(PRESS_SYNC, () => this.syncCluster(cluster, commit));
+      // The incident's clock starts at the press: it fails PRESS_FAIL seconds in.
+      this.startIncident(key, reason, { press: true });
     }
-    this.emit([{ type: 'action', title, link, actor: 'you@example.com', reason: name }]);
-    return { title, link };
+    this.emit([{ type: 'action', title, link, key, cluster, commit, actor: 'you@example.com', reason: name }]);
+    return { title, link, key, cluster, commit };
   }
 
   close() {
     clearInterval(this.loop);
     for (const t of this.timers) clearTimeout(t);
   }
+}
+
+/** What an incident says and does, per failure. */
+function incidentStory({ name, cluster, ns, a, reason, pr }) {
+  const prLink = `${REPO}/pull/${pr}`;
+  const pod = `${name}-659fd87c86-c7xjn`;
+  const card = (mark, step) => `${name} ${reason === 'OOMKilled' ? 'crashloop' : reason === 'Unschedulable' ? 'pending pods' : 'image pull failure'} in ${cluster} ${mark} ${step}`;
+  if (reason === 'Unschedulable') {
+    const options = [
+      { letter: 'A', label: 'Revert the CPU request to 100m', recommended: true },
+      { letter: 'B', label: 'Add a 32-CPU node pool' },
+    ];
+    return {
+      pr, prLink, options, pick: options[0],
+      state: 'UNSPECIFIED',
+      crash: '0/3 nodes are available: 3 Insufficient cpu.',
+      rollout: {},
+      fixed: {},
+      alertTitle: `${cluster}/${name}: Unschedulable, 0/3 nodes can fit 32 CPUs`,
+      alertText: `:rotating_light: *${name} in ${cluster} cannot be scheduled.* Looking now.\n\`${ns}/Pod/${pod}\`: 0/3 nodes are available: 3 Insufficient cpu (5 attempts in 2 minutes).`,
+      notes: [
+        { title: `Looking at ${name}: scheduling events and the node pool`, text: card('◌', `Triage ${ns}/Pod/${pod} (FailedScheduling) on ${cluster}`) },
+        { title: 'The pods request 32 CPUs; the largest node has 8', text: card('◌', 'The pods request *32* CPUs; the largest node has `8` allocatable.') },
+        { title: 'The CPU request changed in the fleet repo minutes ago', text: card('✓', 'The CPU request went from `100m` to `32` in the fleet repo a few minutes ago.') },
+      ],
+      reportTitle: `${name} cannot be scheduled: it asks for 32 CPUs and no node has them`,
+      report: unschedReport({ name, ns, pod }),
+      prTitle: `revert ${name} CPU request to 100m`,
+      prCommit: `fix(${ns}): revert ${name} CPU request to 100m`,
+      healthyWhy: 'on its 100m CPU request',
+    };
+  }
+  if (reason === 'ImagePullBackOff') {
+    const badImage = a.image.replace(/:[^:]+$/, ':v0.0.0-broken');
+    const options = [
+      { letter: 'A', label: 'Revert to the last good tag', recommended: true },
+      { letter: 'B', label: 'Pin the image digest' },
+    ];
+    return {
+      pr, prLink, options, pick: options[0],
+      state: 'CRASHED',
+      crash: `Back-off pulling image "${badImage}"`,
+      rollout: { image: badImage },
+      fixed: { image: FLEET[cluster].image(name) },
+      alertTitle: `${cluster}/${name}: ImagePullBackOff, pods cannot pull their image`,
+      alertText: `:rotating_light: *${name} in ${cluster} cannot pull its image.* Looking now.\n\`${ns}/Pod/${pod}\`: Back-off pulling image \`${badImage}\`.`,
+      notes: [
+        { title: `Looking at ${name}: pod events, container status and the last hour of logs`, text: card('◌', `Triage ${ns}/Pod/${pod} (ImagePullBackOff) on ${cluster}`) },
+        { title: 'The tag v0.0.0-broken does not exist in the registry', text: card('◌', 'The tag `v0.0.0-broken` does not exist in the registry: `manifest unknown`.') },
+        { title: 'The image changed minutes ago in the fleet repo', text: card('✓', 'The image changed a few minutes ago in the fleet repo.') },
+      ],
+      reportTitle: `${name} cannot start: the image tag v0.0.0-broken does not exist`,
+      report: imageReport({ name, ns, pod, badImage, good: a.image }),
+      prTitle: `revert ${name} image`,
+      prCommit: `fix(${ns}): revert ${name} to its last good image`,
+      healthyWhy: 'on the last good image',
+    };
+  }
+  const limit = a.memoryLimit || '256Mi';
+  const raised = `${Math.round((parseInt(limit, 10) * 2) / 50) * 50}Mi`;
+  const options = [
+    { letter: 'A', label: 'Scale to 2 replicas' },
+    { letter: 'B', label: `Increase to ${raised} with headroom`, recommended: true },
+  ];
+  return {
+    pr, prLink, options, pick: options[1],
+    state: 'CRASHED',
+    crash: `container ${name} was OOMKilled (limit ${limit}); 4 restarts in 3m`,
+    rollout: {},
+    fixed: { memoryLimit: raised },
+    alertTitle: `${cluster}/${name}: OOMKilled, 4 restarts in 3 minutes`,
+    alertText: `:rotating_light: *${name} in ${cluster} keeps crashing.* Looking now.\n\`${ns}/Pod/${pod}\` was OOMKilled 4 times in 3 minutes (limit \`${limit}\`).`,
+    notes: [
+      { title: `Looking at ${name}: pod events, container status and the last hour of logs`, text: card('◌', `Triage ${ns}/Pod/${pod} (BackOff) on ${cluster}`) },
+      { title: `Memory peaked at ${limit} against a ${limit} limit before every restart`, text: card('◌', `Memory peaked at *${limit}* against a \`${limit}\` limit before every restart (exit code 137).`) },
+      { title: 'No image change since Tuesday; traffic from loadgenerator is up 3x', text: card('✓', 'No image change since Tuesday; traffic from `loadgenerator` is up 3x.') },
+    ],
+    reportTitle: `${name} is OOM-killed on every start: its ${limit} limit is too low under 3x traffic`,
+    report: oomReport({ name, ns, pod, limit, raised }),
+    prTitle: `raise ${name} memory to ${raised}`,
+    prCommit: `chore(${ns}): increase ${name} memory requests and limits to ${raised}`,
+    healthyWhy: `on the new ${raised} limit`,
+  };
 }

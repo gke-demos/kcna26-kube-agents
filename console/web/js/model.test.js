@@ -87,3 +87,10 @@ test('snapshot keeps the recent signals', () => {
   m.applySnapshot(snap);
   assert.deepEqual(m.recent, []);
 });
+
+test('cluster_synced updates the cluster with its Config Sync commit', () => {
+  const m = new Model();
+  m.applySnapshot(snap);
+  assert.equal(m.applyEvents([{ seq: 11, type: 'cluster_synced', key: 'a', cluster: 'a', commit: 'abc', atespace: { name: 'a', syncCommit: 'abc' } }]), true);
+  assert.equal(m.atespaces.get('a').syncCommit, 'abc');
+});

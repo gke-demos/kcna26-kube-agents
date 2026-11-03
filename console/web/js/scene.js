@@ -190,6 +190,20 @@ const PLATFORM_LABELS = 24;
 const FOCUS_RIBBONS = 0.22;
 // A deck's grab rim: this many pixels either side of its edge (at least the band's width).
 const RIM_PX = 11;
+// A console press: the workload keeps a "change pushed" label and halo until
+// it starts failing, or this many seconds at most.
+const PUSHED_MAX_SECONDS = 600;
+// Seconds between the halo's ripples while a change is pushed.
+const PUSHED_HALO_EVERY = 1.4;
+// Most workloads a reset's arcs fly to.
+const RESET_ARCS = 6;
+// The fleet repo's marker: label, height above the island, distance in from its back-right corner.
+const REPO_LABEL = 'Fleet repo';
+const REPO_Y = 5.5;
+const REPO_INSET = 2.6;
+const REPO_SIZE = 0.42;
+// "change pushed" on a workload's label.
+const PUSHED_TEXT = 'change pushed';
 
 export class Scene {
   /**
@@ -209,6 +223,7 @@ export class Scene {
     this.selected = null;
     this.anims = new Map();
     this.labelPinned = new Map(); // key -> until (seconds)
+    this.pushed = new Map(); // key -> {until, next} (seconds): a console press changed it
     // Agent labels: 'auto' (selected, recent changes, close-ups), 'all', 'off'.
     this.labelMode = 'auto';
     this.plan = null;
@@ -776,6 +791,39 @@ export class Scene {
       },
     });
     this.islandGroup.add(this.router.group);
+    this.buildRepo();
+  }
+
+  /** The fleet repo: a small marker over the island's back-right corner, where console presses fly from. */
+  buildRepo() {
+    if (this.repo) {
+      this.repo.removeFromParent();
+      this.repo.traverse((o) => {
+        o.geometry?.dispose();
+        o.material?.dispose();
+        if (o.isCSS2DObject) o.element.remove();
+      });
+    }
+    const isl = this.island;
+    const g = new THREE.Group();
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(REPO_SIZE, 0), new THREE.MeshBasicMaterial({ color: theme.effects.action }));
+    g.add(gem);
+    const div = document.createElement('div');
+    div.className = 'tower-label repo-label';
+    div.textContent = REPO_LABEL;
+    const label = new CSS2DObject(div);
+    label.position.y = REPO_SIZE * 2.4;
+    g.add(label);
+    g.position.set(isl.cx + isl.width / 2 - REPO_INSET, REPO_Y, isl.cz - isl.depth / 2 + REPO_INSET);
+    this.repo = g;
+    this.repoGem = gem;
+    this.islandGroup.add(g);
+  }
+
+  /** Where a console press's arc starts: the fleet repo marker, else the router. */
+  repoOrigin() {
+    if (this.repo) return this.repo.position.clone();
+    return this.router?.origin?.clone() || null;
   }
 
   /** World height of an agent's top (labels, arcs, the marker). */
@@ -1259,7 +1307,10 @@ export class Scene {
       this.account(rec, -1);
       rec.agent = ev.agent;
       rec.match = this.filter(ev.agent);
-      if (prevState !== ev.agent.state) this.restyle(rec);
+      if (prevState !== ev.agent.state) {
+        this.restyle(rec);
+        if (rec.cls === 'crashed' || rec.cls === 'pending') this.pushed.delete(key);
+      }
       let moved = true;
       if (prevWorker !== ev.agent.worker) {
         moved = this.regroup(rec);
@@ -1338,8 +1389,7 @@ export class Scene {
     const now = this.time.value;
     const fx = theme.effects;
     if (ev.type === 'action') {
-      const o = this.router?.origin;
-      if (o) this.effects.ripple(o.x, o.z, fx.beam, 0.8, 0, Math.max(0.2, o.y - 1.5));
+      this.actionEffect(ev);
       return;
     }
     const rec = ev.key && this.recs.get(ev.key);
@@ -1403,6 +1453,47 @@ export class Scene {
         break;
     }
     this.flash(rec.key);
+  }
+
+  /**
+   * A console press (fleet-scope): the change flies from the fleet repo to
+   * the workload, which keeps a "change pushed" label and halo until it
+   * starts failing. A reset flies to the workloads that are not healthy.
+   */
+  actionEffect(ev) {
+    const fx = theme.effects;
+    const from = this.repoOrigin();
+    if (!from || ev.message === 'failed') return;
+    this.effects.ripple(from.x, from.z, fx.action, 0.8, 0, Math.max(0.2, from.y - 0.4));
+    const fly = (to, onArrive) => {
+      if (this.router?.arcStyle === 'comet') this.effects.comet(from, to, fx.action, onArrive);
+      else this.effects.arc(from, to, fx.action, onArrive);
+    };
+    const rec = ev.key && this.recs.get(ev.key);
+    if (rec) {
+      const to = new THREE.Vector3(rec.x, this.topOf(rec) + 0.2, rec.z);
+      fly(to, () => {
+        this.effects.ripple(rec.x, rec.z, fx.action, 1.5);
+        this.effects.ripple(rec.x, rec.z, fx.action, 1.5, 0.35);
+        this.flash(rec.key);
+      });
+      const t = this.time.value;
+      this.pushed.set(rec.key, { until: t + PUSHED_MAX_SECONDS, next: t + PUSHED_HALO_EVERY * 1.5 });
+      this.pinLabel(rec.key, CHANGE_LABEL_SECONDS * 2);
+      return;
+    }
+    if (ev.key) return;
+    // A reset: to the workloads it puts back; no change is pending any more.
+    this.pushed.clear();
+    let n = 0;
+    for (const r of this.recs.values()) {
+      if (r.cls === 'running' || n >= RESET_ARCS) continue;
+      n++;
+      fly(new THREE.Vector3(r.x, this.topOf(r) + 0.2, r.z), () => {
+        this.effects.ripple(r.x, r.z, fx.action, 1.2);
+        this.flash(r.key);
+      });
+    }
   }
 
   /** Moves an agent to its new class and animates its pose. */
@@ -3162,6 +3253,21 @@ export class Scene {
       this.marker.ring.scale.set(s, s, s);
     }
     this.router?.update(t, dt);
+    if (this.repoGem) {
+      this.repoGem.rotation.y = t * 0.8;
+      this.repoGem.position.y = Math.sin(t * 1.6) * 0.12;
+    }
+    // A pushed change's halo, until the workload fails.
+    for (const [key, p] of this.pushed) {
+      const rec = this.recs.get(key);
+      if (!rec || p.until < t) {
+        this.pushed.delete(key);
+        continue;
+      }
+      if (t < p.next) continue;
+      p.next = t + PUSHED_HALO_EVERY;
+      if (this.fxAllowed(rec.x, rec.z)) this.effects.ripple(rec.x, rec.z, theme.effects.action, 1.1);
+    }
 
     this.effects.update(t);
 
@@ -3367,6 +3473,7 @@ export class Scene {
     const alarm = (rec) => small && (rec.cls === 'crashed' || rec.cls === 'transition' || rec.cls === 'pending');
     if (mode !== 'off' && !farView && !deckHidden) {
       for (const k of this.labelPinned.keys()) cands.add(k);
+      for (const k of this.pushed.keys()) cands.add(k);
       if (maxDist > 0 || small) for (const k of this.allShapes ? this.recs.keys() : this.near) cands.add(k);
     }
     for (const key of cands) {
@@ -3380,7 +3487,7 @@ export class Scene {
       let prio;
       if (selected) prio = -1e9;
       else if (mode === 'off') continue;
-      else if (alarm(rec) && rec.match) prio = -1e8;
+      else if ((alarm(rec) || this.pushed.has(rec.key)) && rec.match) prio = -1e8;
       else if (pinned && rec.match) prio = -until; // newest change first
       else if (d <= maxDist && rec.match) prio = d;
       else continue;
@@ -3429,8 +3536,11 @@ export class Scene {
       obj.position.set(rec.x, this.topOf(rec) + 0.13, rec.z);
       const a = rec.agent;
       const age = duration(since(a.stateSince, now));
-      const html = `<span class="dot" style="background:${cssColor(a.state)}"></span>${esc(a.name)}<span class="sub">${esc(stateWords(a))} ${age}</span>`;
+      const pushed = this.pushed.has(rec.key);
+      const sub = pushed ? `<span class="sub push">⬆ ${PUSHED_TEXT}</span>` : `<span class="sub">${esc(stateWords(a))} ${age}</span>`;
+      const html = `<span class="dot" style="background:${cssColor(a.state)}"></span>${esc(a.name)}${sub}`;
       obj.element.classList.toggle('alarm', rec.cls === 'crashed');
+      obj.element.classList.toggle('pushed', pushed);
       if (obj.element.innerHTML !== html) obj.element.innerHTML = html;
       obj.element.classList.toggle('selected', rec.key === this.selected);
       obj.element.classList.toggle('fading', !!item.fade);

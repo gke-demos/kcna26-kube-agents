@@ -106,6 +106,10 @@ export class Model {
         case 'atespace_removed':
           this.atespaces.delete(ev.key);
           break;
+        case 'cluster_synced':
+          // The cluster as it is now, with its new Config Sync commit.
+          if (ev.atespace) this.atespaces.set(ev.key || ev.cluster, ev.atespace);
+          break;
         case 'worker_added':
         case 'worker_updated':
           this.workers.set(ev.key, ev.worker);

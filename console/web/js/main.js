@@ -33,6 +33,7 @@ import { PerfOverlay } from './perf.js';
 import { ControlsTour } from './tour-ui.js';
 import { ThreadDrawer } from './drawer.js';
 import { latestThread } from './thread.js';
+import { TrackerStack } from './tracker-ui.js';
 
 const $ = (sel) => document.querySelector(sel);
 /** Short state names for the header chips on narrower screens. */
@@ -156,10 +157,19 @@ const themes = new ThemePicker($('#themes'), (t) => {
 
 // The control panel: only for users the collector lets press buttons.
 let stream = null;
-const controls = new ControlPanel($('#controls'), {
-  actions: () => (fleetSynth ? stream.actions() : httpActions.actions()),
-  runAction: (name, target) => (fleetSynth ? stream.runAction(name, target) : httpActions.runAction(name, target)),
-});
+const controls = new ControlPanel(
+  $('#controls'),
+  {
+    actions: () => (fleetSynth ? stream.actions() : httpActions.actions()),
+    runAction: (name, target) => (fleetSynth ? stream.runAction(name, target) : httpActions.runAction(name, target)),
+  },
+  {
+    // Every press gets an incident tracker card, from "Pushing change…" on.
+    onPress: (a, target) => trackers.pressed(a.name, a.title, target),
+    onResult: (id, res) => trackers.answered(id, res),
+    onError: (id, err) => trackers.failed(id, err),
+  },
+);
 
 // Header links (features.links): small pills that open in a new tab; the
 // Slack channel first.
@@ -216,6 +226,20 @@ const drawer = new ThreadDrawer($('#drawer'), {
   },
 });
 
+// The incident tracker: one card per press, top center (tracker-ui.js).
+const trackers = new TrackerStack($('#tracker'), {
+  model: () => model,
+  signals: () => signalEvents,
+  onThread: (thread, key) => {
+    if (key && model.agents.has(key)) select(key, false);
+    openThread(thread);
+  },
+  onSelect: (key) => model.agents.has(key) && select(key, true),
+  resolveKey: (target) => [...model.agents.keys()].find((k) => k.endsWith(`/${target}`)) || '',
+  actionTitle: (name) => controls.titleOf(name),
+  dock: () => $('#controls'),
+});
+
 function openThread(thread) {
   if (!thread) return;
   drawer.open(thread);
@@ -254,6 +278,7 @@ const streamHandlers = {
     else if (selected) panel.agentChanged();
     const want = initialSelection();
     if (want && !selected && model.agents.has(want)) select(want, true);
+    trackers.refresh();
   },
   onEvents: (events) => {
     if (!model.applyEvents(events)) return false;
@@ -266,6 +291,7 @@ const streamHandlers = {
     queueFeed(describe(events.filter((e) => !isSignal(e))));
     refreshChrome();
     if (sigs) drawer.eventsChanged(sigEvents);
+    trackers.onEvents(events);
     if (drawer.key && events.some((e) => e.key === drawer.key && !isSignal(e))) drawer.agentChanged(drawer.key);
     if (selected) {
       const a = model.agents.get(selected);
@@ -755,4 +781,4 @@ $('#tour-btn').addEventListener('click', () => tour.toggle({ loop: params.get('l
 if (params.get('demo') === 'controls') tour.startWhenReady({ loop: params.get('loop') !== '0' });
 
 // For debugging and screenshots.
-window.scope = { model, scene, panel, select, stateClass, eventCounts, themes, looks, stream, perf, tour, drawer, openThread, closeThread, signalEvents };
+window.scope = { model, scene, panel, select, stateClass, eventCounts, themes, looks, stream, perf, tour, drawer, openThread, closeThread, signalEvents, trackers, controls };

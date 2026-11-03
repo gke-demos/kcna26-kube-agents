@@ -59,8 +59,9 @@ export function signalColor(theme, sig) {
       return fx.merge;
     case 'pr_closed':
       return fx.removed;
-    case 'audit':
     case 'action':
+      return fx.action;
+    case 'audit':
       return fx.beam;
     default:
       return theme.ui.evMeta;

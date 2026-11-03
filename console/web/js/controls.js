@@ -54,16 +54,24 @@ export class ControlPanel {
   /**
    * @param {HTMLElement} el
    * @param {{actions: Function, runAction: Function}} api
+   * @param {{onPress?: (action: any, target: string) => any, onResult?: (token: any, result: any) => void, onError?: (token: any, err: any) => void}} [hooks]
+   *   follow a press (the incident tracker): onPress returns a token the other two get back
    */
-  constructor(el, api) {
+  constructor(el, api, hooks = {}) {
     this.el = el;
     this.api = api;
+    this.hooks = hooks;
     this.list = null;
     this.busy = '';
     this.result = null;
     this.enabled = false;
     this.collapsed = false;
     el.addEventListener('click', (e) => this.onClick(e));
+  }
+
+  /** An action's button title, or ''. */
+  titleOf(name) {
+    return (this.list || []).find((a) => a.name === name)?.title || '';
   }
 
   /** Shows or hides the panel (features.actions); loads the actions once shown. */
@@ -122,10 +130,13 @@ export class ControlPanel {
     this.busy = name;
     this.result = null;
     this.render();
+    const token = this.hooks.onPress?.(a, target);
     try {
       this.result = (await this.api.runAction(name, target)) || {};
+      this.hooks.onResult?.(token, this.result);
     } catch (err) {
       this.result = { error: String(err.message || err) };
+      this.hooks.onError?.(token, err);
     } finally {
       this.busy = '';
       this.render();
