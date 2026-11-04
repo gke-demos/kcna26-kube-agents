@@ -51,6 +51,9 @@ const (
 	sceneName          = "kcna-2026-demos fleet"
 	shutdownGrace      = 5 * time.Second
 	readHeaderTimeout  = 10 * time.Second
+	// defaultAutoReset leaves room to watch a whole incident (5–10 min) and
+	// merge the fix before the demo puts itself back.
+	defaultAutoReset = 30 * time.Minute
 )
 
 func main() {
@@ -72,6 +75,8 @@ func main() {
 		slackToken = flag.String("slack-token-file", envOr("SCOPE_SLACK_TOKEN_FILE", ""), "Slack bot token; empty disables Slack signals")
 		channel    = flag.String("slack-channel", envOr("SCOPE_SLACK_CHANNEL", defaultChannel), "channel the agent posts alerts to")
 		links      = flag.String("links", envOr("SCOPE_LINKS", ""), "header links, name=url comma-separated")
+		actionsOn  = flag.Bool("actions", envOr("SCOPE_ACTIONS", "true") == "true", "serve the Break something buttons (they commit to --repo; needs a GitHub token with write access). --actions=false makes the console read-only")
+		autoReset  = flag.Duration("auto-reset", durationEnv("SCOPE_AUTO_RESET", defaultAutoReset), "reset the demo once clusters/ has been off the baseline with no commit for this long (someone pressed a button and walked away); 0 disables. Needs --actions")
 	)
 	flag.Parse()
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
@@ -118,7 +123,16 @@ func main() {
 	if tok := readSecret(*ghToken); tok != "" {
 		gh := signals.NewGitHub(signals.GitHubOptions{Token: tok, Repo: *repo, AuditBranchPrefix: *auditPfx})
 		run("github", func(ctx context.Context) error { return gh.Run(ctx, store, resolve) })
-		act = actions.New(actions.Options{Token: tok, Repo: *repo, Branch: *branch, BaselineTag: *baseline, AuditBranchPrefix: *auditPfx})
+		if *actionsOn {
+			runner := actions.New(actions.Options{Token: tok, Repo: *repo, Branch: *branch, BaselineTag: *baseline, AuditBranchPrefix: *auditPfx})
+			act = runner
+			if *autoReset > 0 {
+				slog.Info("auto-reset on", "idle", autoReset.String())
+				go runner.AutoReset(ctx, store, *autoReset)
+			}
+		} else {
+			slog.Info("buttons off (--actions=false): read-only console")
+		}
 	} else {
 		slog.Warn("no GitHub token: no PR signals, no buttons")
 	}
@@ -157,6 +171,21 @@ func main() {
 func fatal(what string, err error) {
 	slog.Error(what, "err", err)
 	os.Exit(1)
+}
+
+// durationEnv reads a duration from the environment, or def when unset or
+// unparsable (logged).
+func durationEnv(key string, def time.Duration) time.Duration {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		slog.Warn("ignoring unparsable duration", "env", key, "value", v)
+		return def
+	}
+	return d
 }
 
 func envOr(key, def string) string {
