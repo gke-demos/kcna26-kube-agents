@@ -56,6 +56,11 @@ nothing useful. They are on whenever a GitHub token is given; run with **`--acti
 make the console read-only, which is what you want against a real install. Every press is a commit
 with a `Pressed-by: <email>` trailer.
 
+With the buttons on, the console also resets the demo by itself once `clusters/` has been off the
+baseline with no new commit for `--auto-reset` (default 30 minutes; `0` turns it off): someone
+pressed a button and walked away. Any press, merge or reset restarts the clock. The reset is the
+same as the button's, recorded as `Pressed-by: auto-reset` and shown in the feed.
+
 ## Limits
 
 - **Slack only.** Alerts, triage notes, reports and chosen fixes come from parsing the bot's Slack

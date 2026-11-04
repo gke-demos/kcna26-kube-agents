@@ -32,6 +32,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/gke-demos/kcna26-kube-agents/console/internal/server"
 )
@@ -393,42 +394,62 @@ type treeEntry struct {
 }
 
 type commitObject struct {
-	SHA     string    `json:"sha"`
-	HTMLURL string    `json:"html_url"`
-	Tree    gitObject `json:"tree"`
+	SHA       string    `json:"sha"`
+	HTMLURL   string    `json:"html_url"`
+	Tree      gitObject `json:"tree"`
+	Committer struct {
+		Date time.Time `json:"date"`
+	} `json:"committer"`
+}
+
+// heads reads the branch head commit and the clusters/ tree SHAs of the head
+// and of the baseline tag.
+func (r *Runner) heads(ctx context.Context) (head commitObject, headClusters, baseClusters string, err error) {
+	var ref struct {
+		Object gitObject `json:"object"`
+	}
+	if err = r.call(ctx, http.MethodGet, r.repoPath(pathRef, escapePath(refHeadsPrefix+r.o.Branch)), nil, &ref); err != nil {
+		return head, "", "", fmt.Errorf("read %s: %w", r.o.Branch, err)
+	}
+	if head, err = r.commit(ctx, ref.Object.SHA); err != nil {
+		return head, "", "", err
+	}
+	if headClusters, err = r.clustersEntry(ctx, head.Tree.SHA); err != nil {
+		return head, "", "", fmt.Errorf("%s: %w", r.o.Branch, err)
+	}
+	baseCommitSHA, err := r.tagCommit(ctx, r.o.BaselineTag)
+	if err != nil {
+		return head, "", "", err
+	}
+	baseCommit, err := r.commit(ctx, baseCommitSHA)
+	if err != nil {
+		return head, "", "", err
+	}
+	if baseClusters, err = r.clustersEntry(ctx, baseCommit.Tree.SHA); err != nil {
+		return head, "", "", fmt.Errorf("%s: %w", r.o.BaselineTag, err)
+	}
+	if baseClusters == "" {
+		return head, "", "", fmt.Errorf("%s has no %s/ tree", r.o.BaselineTag, clustersDir)
+	}
+	return head, headClusters, baseClusters, nil
+}
+
+// Drift reports whether clusters/ on the branch differs from the baseline
+// tag, and when the branch head was committed (a press, a merge, a reset).
+func (r *Runner) Drift(ctx context.Context) (off bool, headAt time.Time, err error) {
+	head, headClusters, baseClusters, err := r.heads(ctx)
+	if err != nil {
+		return false, time.Time{}, err
+	}
+	return headClusters != baseClusters, head.Committer.Date, nil
 }
 
 // reset swaps clusters/ for the baseline tag's in one commit (dropping files
 // added since), then closes every open PR not opened by the audits.
 func (r *Runner) reset(ctx context.Context, message string) (string, string, error) {
-	var head struct {
-		Object gitObject `json:"object"`
-	}
-	if err := r.call(ctx, http.MethodGet, r.repoPath(pathRef, escapePath(refHeadsPrefix+r.o.Branch)), nil, &head); err != nil {
-		return "", "", fmt.Errorf("read %s: %w", r.o.Branch, err)
-	}
-	headCommit, err := r.commit(ctx, head.Object.SHA)
+	headCommit, headClusters, baseClusters, err := r.heads(ctx)
 	if err != nil {
 		return "", "", err
-	}
-	headClusters, err := r.clustersEntry(ctx, headCommit.Tree.SHA)
-	if err != nil {
-		return "", "", fmt.Errorf("%s: %w", r.o.Branch, err)
-	}
-	baseCommitSHA, err := r.tagCommit(ctx, r.o.BaselineTag)
-	if err != nil {
-		return "", "", err
-	}
-	baseCommit, err := r.commit(ctx, baseCommitSHA)
-	if err != nil {
-		return "", "", err
-	}
-	baseClusters, err := r.clustersEntry(ctx, baseCommit.Tree.SHA)
-	if err != nil {
-		return "", "", fmt.Errorf("%s: %w", r.o.BaselineTag, err)
-	}
-	if baseClusters == "" {
-		return "", "", fmt.Errorf("%s has no %s/ tree", r.o.BaselineTag, clustersDir)
 	}
 
 	state, link := resetAlready, headCommit.HTMLURL

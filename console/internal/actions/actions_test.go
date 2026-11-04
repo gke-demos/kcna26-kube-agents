@@ -52,6 +52,9 @@ type fakeGitHub struct {
 	t  *testing.T
 	mu sync.Mutex
 
+	// commitDate is every commit's committer date; zero leaves it out.
+	commitDate time.Time
+
 	files map[string]string
 	puts  []put
 
@@ -218,8 +221,12 @@ func (f *fakeGitHub) getCommit(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"message": "Not Found"})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"sha": s, "html_url": "https://github.com/" + repo + "/commit/" + s,
-		"tree": map[string]string{"sha": tree, "type": "tree"}})
+	c := map[string]any{"sha": s, "html_url": "https://github.com/" + repo + "/commit/" + s,
+		"tree": map[string]string{"sha": tree, "type": "tree"}}
+	if !f.commitDate.IsZero() {
+		c["committer"] = map[string]string{"date": f.commitDate.Format(time.RFC3339)}
+	}
+	writeJSON(w, http.StatusOK, c)
 }
 
 func (f *fakeGitHub) getTree(w http.ResponseWriter, r *http.Request) {
