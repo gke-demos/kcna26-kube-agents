@@ -72,6 +72,7 @@ func main() {
 		slackToken = flag.String("slack-token-file", envOr("SCOPE_SLACK_TOKEN_FILE", ""), "Slack bot token; empty disables Slack signals")
 		channel    = flag.String("slack-channel", envOr("SCOPE_SLACK_CHANNEL", defaultChannel), "channel the agent posts alerts to")
 		links      = flag.String("links", envOr("SCOPE_LINKS", ""), "header links, name=url comma-separated")
+		actionsOn  = flag.Bool("actions", envOr("SCOPE_ACTIONS", "true") == "true", "serve the Break something buttons (they commit to --repo; needs a GitHub token with write access). --actions=false makes the console read-only")
 	)
 	flag.Parse()
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
@@ -118,7 +119,11 @@ func main() {
 	if tok := readSecret(*ghToken); tok != "" {
 		gh := signals.NewGitHub(signals.GitHubOptions{Token: tok, Repo: *repo, AuditBranchPrefix: *auditPfx})
 		run("github", func(ctx context.Context) error { return gh.Run(ctx, store, resolve) })
-		act = actions.New(actions.Options{Token: tok, Repo: *repo, Branch: *branch, BaselineTag: *baseline, AuditBranchPrefix: *auditPfx})
+		if *actionsOn {
+			act = actions.New(actions.Options{Token: tok, Repo: *repo, Branch: *branch, BaselineTag: *baseline, AuditBranchPrefix: *auditPfx})
+		} else {
+			slog.Info("buttons off (--actions=false): read-only console")
+		}
 	} else {
 		slog.Warn("no GitHub token: no PR signals, no buttons")
 	}

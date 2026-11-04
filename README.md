@@ -22,6 +22,7 @@ squeezes a service's memory, `trigger-badimage.sh` rolls out a tag that does not
 - [`slides/`](slides/): the architecture and roadmap diagrams.
 - `terraform/`: the two workload clusters and Config Sync.
 - `scripts/`: triggers, `break-something.sh`, `reset.sh`, `preflight.sh`, `contexts.sh`.
+- [`console/`](console/README.md): fleet-scope, the 3D demo console, and how to run it against your own install.
 - `tools/`: rebuilds the fleet repo's baseline from the pinned upstream apps.
 
 ## Rebuilding the fleet repo baseline
