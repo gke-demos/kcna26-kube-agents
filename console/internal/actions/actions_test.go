@@ -45,6 +45,7 @@ type pr struct {
 	number   int
 	ref      string
 	headRepo string
+	created  time.Time
 }
 
 // fakeGitHub is the slice of the GitHub API the runner uses.
@@ -68,10 +69,14 @@ type fakeGitHub struct {
 	createdCommit []map[string]any
 	refUpdates    []map[string]any
 
-	pulls    []pr
-	comments map[int]string
-	closed   []int
-	deleted  []string
+	pulls []pr
+	// merged records PUT /pulls/{n}/merge calls (number -> commit message);
+	// refuseMerge makes the fake answer 405 for those numbers.
+	merged      map[int]string
+	refuseMerge map[int]bool
+	comments    map[int]string
+	closed      []int
+	deleted     []string
 
 	// onGet, when set, runs on every contents GET (outside mu).
 	onGet func()
@@ -116,6 +121,7 @@ func newFake(t *testing.T) (*fakeGitHub, *Runner) {
 	mux.HandleFunc("GET "+p+"/git/tags/{sha}", f.getTag)
 	mux.HandleFunc("GET "+p+"/pulls", f.listPulls)
 	mux.HandleFunc("PATCH "+p+"/pulls/{n}", f.patchPull)
+	mux.HandleFunc("PUT "+p+"/pulls/{n}/merge", f.mergePull)
 	mux.HandleFunc("POST "+p+"/issues/{n}/comments", f.postComment)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer "+token ||
@@ -284,11 +290,35 @@ func (f *fakeGitHub) listPulls(w http.ResponseWriter, r *http.Request) {
 	var out []map[string]any
 	if r.URL.Query().Get("page") == "1" {
 		for _, p := range f.pulls {
-			out = append(out, map[string]any{"number": p.number, "head": map[string]any{
-				"ref": p.ref, "repo": map[string]string{"full_name": p.headRepo}}})
+			m := map[string]any{"number": p.number, "title": fmt.Sprintf("fix #%d", p.number),
+				"html_url": fmt.Sprintf("https://github.com/%s/pull/%d", repo, p.number),
+				"head":     map[string]any{"ref": p.ref, "repo": map[string]string{"full_name": p.headRepo}}}
+			if !p.created.IsZero() {
+				m["created_at"] = p.created.Format(time.RFC3339)
+			}
+			out = append(out, m)
 		}
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+func (f *fakeGitHub) mergePull(w http.ResponseWriter, r *http.Request) {
+	m := decode(f.t, r)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	n, _ := strconv.Atoi(r.PathValue("n"))
+	if f.refuseMerge[n] {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"message": "Pull Request is not mergeable"})
+		return
+	}
+	if m["merge_method"] != "merge" {
+		f.t.Errorf("merge_method = %v", m["merge_method"])
+	}
+	if f.merged == nil {
+		f.merged = map[int]string{}
+	}
+	f.merged[n], _ = m["commit_message"].(string)
+	writeJSON(w, http.StatusOK, map[string]any{"merged": true})
 }
 
 func (f *fakeGitHub) patchPull(w http.ResponseWriter, r *http.Request) {
@@ -524,9 +554,9 @@ func seedReset(f *fakeGitHub, sameClusters bool) {
 		{Path: "clusters", Mode: "040000", Type: "tree", SHA: "clusters-base"},
 	}
 	f.pulls = []pr{
-		{7, "platform-agent/fix-pdb-checkout", repo},
-		{9, "incident/oom-reco", repo},
-		{11, "patch-1", "someone/fork"},
+		{number: 7, ref: "platform-agent/fix-pdb-checkout", headRepo: repo},
+		{number: 9, ref: "incident/oom-reco", headRepo: repo},
+		{number: 11, ref: "patch-1", headRepo: "someone/fork"},
 	}
 }
 

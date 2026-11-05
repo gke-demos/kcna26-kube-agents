@@ -134,6 +134,7 @@ Do not merge them; they are what the talk shows.
 - [ ] `python3 -I tools/clear_channel.py --keep audit`: removes the bot's earlier alerts and
       drift notes and keeps the audit cards. Then open `#platform-ops`.
 - [ ] Do nothing by hand on any cluster from here on: every manual change raises a drift alert.
+- [ ] Booth mode off (`scripts/console.sh booth off`): on stage, a person merges the fix.
 - [ ] Browser tabs: the compliance audit issue, the `cluster-admin` fix PR, the fleet repo's PR
       list, the Online Boutique storefront.
 - [ ] Terminal: large font, in this repo, `scripts/trigger-oom.sh` typed but not run.
@@ -172,10 +173,14 @@ After the talk: `scripts/reset.sh`.
   2. The Cluster Agent reports in 1–2 minutes and opens its recommended fix as a PR by itself
      (`scripts/tune-agent.sh`); open the thread drawer ("View thread ›") to show the diagnosis.
   3. Merge the PR from its link in the feed and watch the workload heal (about 30 s), or leave it.
+     While the agent writes the fix (a few minutes), the tracker's PR step shows its latest note.
   4. Press "Reset the demo" (closes the PR if unmerged, restores the baseline).
 - **Vary the workload between visitors.** A workload that breaks the same way again within
   about 15 minutes is folded into its open incident: no new alert, no new triage. The target
   pickers default to different services; rotate through them.
 - Run `scripts/preflight.sh` at the start of each shift.
+- **Unstaffed stretches:** `scripts/console.sh booth on` merges the agent's incident PRs 60 s
+  after they open (`booth on 2m` for longer), so a visitor sees the whole loop without anyone
+  there. `scripts/console.sh booth off` hands merging back. Any `console.sh deploy` turns it off.
 - **If Slack or the agent is down,** keep the attract loop on and say so; don't debug at the
   booth. Ping the on-call channel.

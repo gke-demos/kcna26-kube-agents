@@ -54,6 +54,8 @@ const FAIL_MS = { oom: 120e3, image: 60e3, unschedulable: 60e3, other: 120e3 };
 const WATCH_MS = { oom: 300e3, image: 20e3, unschedulable: 180e3, other: 300e3 };
 const TRIAGE_MS = 360e3;
 const PR_MS = 120e3;
+// The console's booth-mode merge (actions.AutoMergeActor on the Go side).
+const AUTO_MERGE_ACTOR = 'auto-merge';
 const HEAL_MS = 180e3;
 const RESET_HEAL_MS = 180e3;
 
@@ -458,6 +460,11 @@ function incidentSteps(ctx) {
     pr.link = e.link || '';
     pr.linkText = 'GitHub';
     pr.hint = '';
+  } else if (report) {
+    // While the agent writes its fix (a few minutes: read the repo, edit, push,
+    // open), show its latest note so the wait doesn't look like a hang.
+    const working = notes.filter((e) => atOf(e) > atOf(report)).pop();
+    if (working) pr.detail = working.title || '';
   }
   steps.push(pr);
 
@@ -465,7 +472,10 @@ function incidentSteps(ctx) {
   if (merged) {
     mg.state = DONE;
     mg.at = atOf(merged);
-    mg.detail = merged.actor ? `Merged by ${merged.actor}; Config Sync applies it next` : 'Config Sync applies it next';
+    const auto = sigs.find((e) => e.type === 'action' && e.actor === AUTO_MERGE_ACTOR && e.link && e.link === (merged.link || prLink));
+    mg.detail = auto
+      ? 'Merged automatically (booth mode); Config Sync applies it next'
+      : merged.actor ? `Merged by ${merged.actor}; Config Sync applies it next` : 'Config Sync applies it next';
     mg.link = merged.link || prLink;
     mg.linkText = 'GitHub';
     mg.hint = '';

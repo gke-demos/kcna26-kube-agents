@@ -76,6 +76,7 @@ func main() {
 		channel    = flag.String("slack-channel", envOr("SCOPE_SLACK_CHANNEL", defaultChannel), "channel the agent posts alerts to")
 		links      = flag.String("links", envOr("SCOPE_LINKS", ""), "header links, name=url comma-separated")
 		actionsOn  = flag.Bool("actions", envOr("SCOPE_ACTIONS", "true") == "true", "serve the Break something buttons (they commit to --repo; needs a GitHub token with write access). --actions=false makes the console read-only")
+		autoMerge  = flag.Duration("auto-merge", durationEnv("SCOPE_AUTO_MERGE", 0), "booth mode: merge the triage's incident PRs (platform-agent/incident-*) this long after they open, so incidents heal without staff; 0 (the default) leaves merging to a person. Needs --actions")
 		autoReset  = flag.Duration("auto-reset", durationEnv("SCOPE_AUTO_RESET", defaultAutoReset), "reset the demo once clusters/ has been off the baseline with no commit for this long (someone pressed a button and walked away); 0 disables. Needs --actions")
 	)
 	flag.Parse()
@@ -129,6 +130,10 @@ func main() {
 			if *autoReset > 0 {
 				slog.Info("auto-reset on", "idle", autoReset.String())
 				go runner.AutoReset(ctx, store, *autoReset)
+			}
+			if *autoMerge > 0 {
+				slog.Info("auto-merge on (booth mode)", "after", autoMerge.String())
+				go runner.AutoMerge(ctx, store, *autoMerge)
 			}
 		} else {
 			slog.Info("buttons off (--actions=false): read-only console")

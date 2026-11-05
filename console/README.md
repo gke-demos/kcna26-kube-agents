@@ -61,6 +61,12 @@ baseline with no new commit for `--auto-reset` (default 30 minutes; `0` turns it
 pressed a button and walked away. Any press, merge or reset restarts the clock. The reset is the
 same as the button's, recorded as `Pressed-by: auto-reset` and shown in the feed.
 
+`--auto-merge=DURATION` (env `SCOPE_AUTO_MERGE`; off by default) merges the agent's incident PRs,
+branches `platform-agent/incident-*`, once they have been open that long, so an unstaffed booth
+heals on its own. Audit PRs and anyone else's are left alone. Each merge carries
+`Pressed-by: auto-merge` and shows in the feed and the tracker. Leave it off anywhere a person
+should be the one who merges.
+
 ## Limits
 
 - **Slack only.** Alerts, triage notes, reports and chosen fixes come from parsing the bot's Slack

@@ -7,6 +7,9 @@
 #                                    fixed identity so `open` works without IAP; testing only
 #        console.sh open             port-forward to http://localhost:18080 (needs deploy --dev)
 #        console.sh gateway          the public Gateway behind IAP (refused while --dev is on)
+#        console.sh booth on [DELAY]  booth mode: merge the agent's incident PRs DELAY after they
+#                                    open (default 60s), so incidents heal without staff
+#        console.sh booth off        merging back to a person (the talk). A deploy also turns it off
 #        console.sh logs             follow the pod's logs
 set -euo pipefail
 
@@ -24,6 +27,8 @@ readonly PLATFORM="linux/amd64"
 readonly ROLLOUT_TIMEOUT="300s"
 readonly DEV_IDENTITY="dev@port-forward.local"
 readonly DEV_FLAG="--dev-identity=$DEV_IDENTITY"
+readonly BOOTH_ENV="SCOPE_AUTO_MERGE"
+readonly BOOTH_DEFAULT_DELAY="60s"
 
 k() { kubectl --context "$CONTEXT" -n "$NAMESPACE" "$@"; }
 die() {
@@ -93,11 +98,27 @@ case "${1:-}" in
     echo "Gateway applied. The load balancer takes a few minutes; then grant viewers:"
     echo "  gcloud projects add-iam-policy-binding $PROJECT --member=user:EMAIL --role=roles/iap.httpsResourceAccessor"
     ;;
+  booth)
+    case "${2:-}" in
+      on)
+        delay="${3:-$BOOTH_DEFAULT_DELAY}"
+        k set env deploy/fleet-scope "$BOOTH_ENV=$delay" >/dev/null
+        k rollout status deploy/fleet-scope --timeout="$ROLLOUT_TIMEOUT"
+        echo "booth mode on: incident PRs merge $delay after they open"
+        ;;
+      off)
+        k set env deploy/fleet-scope "$BOOTH_ENV-" >/dev/null
+        k rollout status deploy/fleet-scope --timeout="$ROLLOUT_TIMEOUT"
+        echo "booth mode off: a person merges"
+        ;;
+      *) die "usage: console.sh booth on [DELAY] | off" ;;
+    esac
+    ;;
   logs)
     k logs -f deploy/fleet-scope
     ;;
   *)
-    sed -n '2,9p' "$0"
+    sed -n '2,14p' "$0"
     exit 2
     ;;
 esac

@@ -228,6 +228,28 @@ test('a sync before the commit was pushed, or for a refused press, does not coun
   assert.deepEqual(states(r), [FAILED, ...Array(10).fill(PENDING)]);
 });
 
+test('PR step: the agent\'s notes after the report show while it writes the fix', () => {
+  const p = pressed();
+  const failing = model({ state: 'CRASHED', reason: 'OOMKilled', since: 70, sync: { 'boutique-prod': SHA } });
+  const working = [...incident(480), { type: 'triage', key: KEY, thread: THREAD, time: at(500), title: 'Editing deployment.yaml' }];
+  let r = deriveSteps(p, failing, incident(480), ms(490));
+  assert.equal(byId(r, 'pr').detail || '', '');
+  r = deriveSteps(p, failing, working, ms(510));
+  assert.equal(byId(r, 'pr').detail, 'Editing deployment.yaml');
+});
+
+test('booth auto-merge is named on the merged step', () => {
+  const p = pressed();
+  const failing = model({ state: 'CRASHED', reason: 'OOMKilled', since: 70, sync: { 'boutique-prod': SHA } });
+  const sigs = [...incident(520),
+    { type: 'pr_merged', key: KEY, time: at(580), title: 'PR #12 merged', link: 'https://github.com/o/r/pull/12', actor: 'kcna26-bot' },
+    { type: 'action', actor: 'auto-merge', time: at(580), title: 'Auto-merged PR #12 after 1 min (booth mode): raise memory', link: 'https://github.com/o/r/pull/12' }];
+  let r = deriveSteps(p, failing, sigs, ms(590));
+  assert.match(byId(r, 'merged').detail, /booth mode/);
+  r = deriveSteps(p, failing, incident(), ms(610));
+  assert.equal(byId(r, 'merged').detail, 'Merged by gari; Config Sync applies it next');
+});
+
 test('a closed PR fails the merge step', () => {
   const p = pressed();
   const sigs = [...incident(520), { type: 'pr_closed', key: KEY, time: at(560), link: 'https://github.com/o/r/pull/12', title: 'PR #12 closed' }];

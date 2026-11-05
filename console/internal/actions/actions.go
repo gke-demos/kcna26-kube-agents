@@ -540,8 +540,11 @@ func (r *Runner) tagCommit(ctx context.Context, tag string) (string, error) {
 }
 
 type pullRequest struct {
-	Number int `json:"number"`
-	Head   struct {
+	Number    int       `json:"number"`
+	Title     string    `json:"title"`
+	HTMLURL   string    `json:"html_url"`
+	CreatedAt time.Time `json:"created_at"`
+	Head      struct {
 		Ref  string `json:"ref"`
 		Repo *struct {
 			FullName string `json:"full_name"`
@@ -549,20 +552,28 @@ type pullRequest struct {
 	} `json:"head"`
 }
 
-// closeIncidentPRs closes every open PR whose branch lacks the audit prefix,
-// with a comment, deleting its branch when it lives in the fleet repo. It
-// carries on past a failure and returns how many it closed.
-func (r *Runner) closeIncidentPRs(ctx context.Context) (int, error) {
+// openPRs lists every open PR on the repo.
+func (r *Runner) openPRs(ctx context.Context) ([]pullRequest, error) {
 	var open []pullRequest
 	for page := 1; ; page++ {
 		var batch []pullRequest
 		if err := r.call(ctx, http.MethodGet, fmt.Sprintf(pathPulls, r.o.Repo, prStateOpen, prPageSize, page), nil, &batch); err != nil {
-			return 0, fmt.Errorf("list PRs: %w", err)
+			return nil, fmt.Errorf("list PRs: %w", err)
 		}
 		open = append(open, batch...)
 		if len(batch) < prPageSize {
-			break
+			return open, nil
 		}
+	}
+}
+
+// closeIncidentPRs closes every open PR whose branch lacks the audit prefix,
+// with a comment, deleting its branch when it lives in the fleet repo. It
+// carries on past a failure and returns how many it closed.
+func (r *Runner) closeIncidentPRs(ctx context.Context) (int, error) {
+	open, err := r.openPRs(ctx)
+	if err != nil {
+		return 0, err
 	}
 	closed := 0
 	var errs []error

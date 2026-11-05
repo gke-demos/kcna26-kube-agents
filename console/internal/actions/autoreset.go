@@ -69,11 +69,11 @@ func (r *Runner) autoResetOnce(ctx context.Context, e Emitter, idle time.Duratio
 	res, err := r.Run(ctx, ActionReset, "", AutoResetActor)
 	ev := model.Event{
 		Type: model.EventAction, Actor: AutoResetActor, Reason: ActionReset,
-		Title: fmt.Sprintf(autoResetTitle, humanIdle(idle), res.Title), Link: res.Link, Commit: res.Commit,
+		Title: fmt.Sprintf(autoResetTitle, humanDuration(idle), res.Title), Link: res.Link, Commit: res.Commit,
 	}
 	if err != nil {
 		slog.Warn("auto-reset failed", "err", err)
-		ev.Title = fmt.Sprintf(autoResetTitle, humanIdle(idle), err.Error())
+		ev.Title = fmt.Sprintf(autoResetTitle, humanDuration(idle), err.Error())
 		ev.Message = autoResetFailed
 	} else {
 		slog.Info("auto-reset", "idle", idle.String(), "result", res.Title)
@@ -82,8 +82,8 @@ func (r *Runner) autoResetOnce(ctx context.Context, e Emitter, idle time.Duratio
 	return err == nil
 }
 
-// humanIdle prints whole minutes as "30 min", anything else as Go does.
-func humanIdle(d time.Duration) string {
+// humanDuration prints whole minutes as "30 min", anything else as Go does.
+func humanDuration(d time.Duration) string {
 	if d%time.Minute == 0 {
 		return fmt.Sprint(int(d/time.Minute)) + minuteSuffix
 	}
