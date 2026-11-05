@@ -24,6 +24,8 @@ import { buildThread, isBot } from './thread.js';
 
 /** How close to the bottom (px) still counts as reading the latest message. */
 const STICK_PX = 48;
+// A second scroll after this, for layout that settles late.
+const SETTLE_MS = 250;
 /** How often relative times refresh (ms). */
 const AGO_EVERY = 5000;
 /** One day, in ms (older messages show their date). */
@@ -112,8 +114,16 @@ export class ThreadDrawer {
       },
       true,
     );
+    // Follow new messages unless the reader scrolled up. Intent comes from the
+    // reader's own scrolling (wheel, touch, keys, the scrollbar); scrolls we
+    // make ourselves are ignored, so late layout (code blocks, the status
+    // chip) can't turn following off.
+    this.follow = true;
+    this.autoScrolling = false;
     this.body.addEventListener('scroll', () => {
-      if (this.atBottom()) this.newBtn.hidden = true;
+      if (this.autoScrolling) return;
+      this.follow = this.atBottom();
+      if (this.follow) this.newBtn.hidden = true;
     });
     setInterval(() => this.refreshTimes(), AGO_EVERY);
   }
@@ -137,6 +147,7 @@ export class ThreadDrawer {
       this.seen = new Set();
       this.sig = '';
       this.unfolded = new Set();
+      this.follow = true;
     }
     this.render(true);
   }
@@ -160,6 +171,23 @@ export class ThreadDrawer {
     if (this.thread && key === this.key) this.render(false);
   }
 
+  /** Scrolls to the newest message, again after layout settles (fonts, code blocks). */
+  toBottom() {
+    const go = () => {
+      if (!this.follow && !this.autoScrolling) return;
+      this.autoScrolling = true;
+      this.body.scrollTop = this.body.scrollHeight;
+      // The scroll event for this lands after us; release on the next frame.
+      requestAnimationFrame(() => {
+        this.autoScrolling = false;
+      });
+    };
+    this.follow = true;
+    go();
+    requestAnimationFrame(go);
+    setTimeout(go, SETTLE_MS);
+  }
+
   atBottom() {
     const b = this.body;
     return b.scrollHeight - b.scrollTop - b.clientHeight < STICK_PX;
@@ -172,12 +200,12 @@ export class ThreadDrawer {
     const sig = t.items.map((i) => `${i.kind}|${i.ev.seq}|${i.ev.ts}|${i.ev.type}|${i.ev.link}`).join(',') + `|${t.chosen?.letter || ''}`;
     if (!first && sig === this.sig) return;
     this.sig = sig;
-    const stick = first || this.atBottom();
+    const stick = first || this.follow;
     const prevTop = this.body.scrollTop;
     this.list.innerHTML = t.items.length ? t.items.map((it) => this.itemHTML(it, t)).join('') : '<li class="sys muted">No messages in this thread yet.</li>';
     for (const it of t.items) this.seen.add(this.itemId(it));
     if (stick) {
-      this.body.scrollTop = this.body.scrollHeight;
+      this.toBottom();
       this.newBtn.hidden = true;
     } else {
       this.body.scrollTop = prevTop;
@@ -260,7 +288,8 @@ export class ThreadDrawer {
     if (btn.dataset.act === 'close') this.opts.onClose();
     else if (btn.dataset.act === 'details' && this.key) this.opts.onDetails(this.key);
     else if (btn.dataset.act === 'bottom') {
-      this.body.scrollTo({ top: this.body.scrollHeight, behavior: 'smooth' });
+      this.follow = true;
+      this.toBottom();
       this.newBtn.hidden = true;
     }
   }
