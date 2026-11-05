@@ -48,7 +48,7 @@ spec:
             - name: SCOPE_PROJECT_NUMBER
               value: "893733606120"
             - name: SCOPE_WRITERS
-              value: domain:google.com,garisingh@gke.ninja,g0926event283@event.goog,g0926event284@event.goog,g0926event285@event.goog,g0926event286@event.goog,g0926event287@event.goog,g0926event288@event.goog
+              value: domain:google.com,domain:event.goog,garisingh@gke.ninja
             - name: SCOPE_LINKS
               value: >-
                 Slack #platform-ops=https://kubeagentsdemo.slack.com/archives/C0CEZ07K39N,
