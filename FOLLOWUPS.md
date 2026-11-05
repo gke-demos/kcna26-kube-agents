@@ -39,8 +39,8 @@ Friday are for re-runs and recording. Strike items through as they close.
       `gs://kcna-2026-demos-media/video/2026-11-03/` (readable by google.com, the demo accounts and
       garisingh@gke.ninja; open with https://storage.cloud.google.com/kcna-2026-demos-media/video/2026-11-03/fleet-scope-walkthrough-narrated.mp4).
       Booth laptops keep an offline copy: `gcloud storage cp gs://kcna-2026-demos-media/video/2026-11-03/*.mp4 .`
-- [x] ~~The 3D console~~: live at https://kcna26.demo.gke.ninja behind IAP (google.com, the six
-      event.goog demo accounts, garisingh@gke.ninja). Buttons: all of google.com,
+- [x] ~~The 3D console~~: live at https://kcna26.demo.gke.ninja behind IAP (google.com, every
+      event.goog account, granted as its Workspace's primary domain `ett.goog`, garisingh@gke.ninja). Buttons: all of google.com,
       garisingh@gke.ninja and the six demo accounts (`SCOPE_WRITERS` in `console/deploy/fleet-scope.yaml`).
 - [ ] File the upstream kube-agents issues below once Gari agrees.
 

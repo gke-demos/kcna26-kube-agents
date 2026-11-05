@@ -30,7 +30,9 @@ variable "console_viewers" {
   default = [
     "domain:google.com",
     "user:garisingh@gke.ninja",
-    # The event's demo accounts (booth and talk laptops).
+    # The Workspace behind event.goog: IAM stores an alias domain under its primary, ett.goog.
+    "domain:ett.goog",
+    # The event's demo accounts (booth and talk laptops); they may also press the buttons.
     "user:g0926event283@event.goog",
     "user:g0926event284@event.goog",
     "user:g0926event285@event.goog",
