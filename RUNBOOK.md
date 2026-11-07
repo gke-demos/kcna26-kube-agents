@@ -112,7 +112,11 @@ human-in-the-loop moment.
 **Freeze** after the first clean run-through: record the image tag here and do not upgrade.
 Never restart the gateway during a session; it runs as a single replica.
 
-Installed: release `0.23.0` (image tag `0.23.0`) on 2026-11-02. Frozen once the first run-through is clean.
+Installed: release `0.23.0` on 2026-11-02; upgraded in place to `0.25.0` on 2026-11-07 after a fresh 0.25.0 install
+on the staging hub passed the same incidents. Upgrade with the release's `upgrade.sh --upgrade-mode=full`, `--plan` first:
+`install.env` must carry `MODEL_PROVIDER` and `VERTEX_LOCATION` (`install-hub.sh` adds them), or the plan removes the
+Vertex AI gateway's identity. An upgrade's CRD apply and a console deploy each raise drift alerts and drift triage
+cards: archive the cards and clear the channel afterwards. Frozen once the first run-through is clean.
 
 ## 2. Pre-stage the audits
 

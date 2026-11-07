@@ -42,6 +42,15 @@ Friday are for re-runs and recording. Strike items through as they close.
 - [x] ~~The 3D console~~: live at https://kcna26.demo.gke.ninja behind IAP (google.com, every
       event.goog account, granted as its Workspace's primary domain `ett.goog`, garisingh@gke.ninja). Buttons: all of google.com, all of
       event.goog and garisingh@gke.ninja (`SCOPE_WRITERS` in `console/deploy/fleet-scope.yaml`).
+- [x] ~~kube-agents 0.25.0~~: tried on a staging install (`kube-agents-stg` + `boutique-stg` in
+      gke-demos-345619, `scripts/install-staging.sh`, `terraform/staging/`, its own Slack app and repo
+      `kcna26-fleet-gitops-staging`), then kube-agents-hub upgraded in place on 2026-11-07. Prod
+      rehearsals after the upgrade: bad image trigger → healthy in 4:21, OOM in 11:00. The console
+      reads 0.25's alert-edited-into-report threads.
+- [ ] Tear down staging once nothing more needs trying there: `terraform/staging` destroy, then the
+      installer's uninstall for `kube-agents-stg` (its key rings stay; key rings cannot be deleted).
+      It shares the minter and LiteLLM Workload Identity principals with kube-agents-host, and its
+      project-wide audits cost about $20 an hour in tokens.
 - [ ] File the upstream kube-agents issues below once Gari agrees.
 
 ## Fixed on the way
