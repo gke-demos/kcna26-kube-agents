@@ -13,12 +13,16 @@
 #     runs (a cluster created later is picked up by the hourly reconcile: re-run);
 #   - turns the drift detector off (its log sink reads every cluster in the project).
 #
-# Accepted, for a short-lived staging install: the token minter's and LiteLLM's
-# KSAs (kubeagents-system/kubeagents-github-minter, kubeagents-litellm) cannot be
-# renamed, and kube-agents-host uses the same ones. Workload Identity ignores the
-# cluster, so each install's minter could act as the other's minter service account.
-# Tear staging down once it has answered its question (terraform/staging, then the
-# installer's uninstall).
+# Accepted: the token minter's and LiteLLM's KSAs (kubeagents-system/
+# kubeagents-github-minter, kubeagents-litellm) cannot be renamed, and
+# kube-agents-host uses the same ones. Workload Identity ignores the cluster, so
+# each install's minter could act as the other's minter service account. Staging
+# is kept for upgrade testing; to retire it, destroy terraform/staging, then run
+# the installer's uninstall.
+#
+# To try a new release: bump RELEASE, fetch its install.sh into $CRED_DIR, and use
+# that release's upgrade.sh --upgrade-mode=full (--plan first) from $WORK_DIR's
+# checkout moved to the release, with KUBE_AGENTS_INSTALL_ENV=$CRED_DIR/install.env.
 #
 # It also turns on the web console (kube-agents' own browser workspace, read-only
 # incident threads while Slack is on), to judge it beside fleet-scope:

@@ -47,10 +47,11 @@ Friday are for re-runs and recording. Strike items through as they close.
       `kcna26-fleet-gitops-staging`), then kube-agents-hub upgraded in place on 2026-11-07. Prod
       rehearsals after the upgrade: bad image trigger → healthy in 4:21, OOM in 11:00. The console
       reads 0.25's alert-edited-into-report threads.
-- [ ] Tear down staging once nothing more needs trying there: `terraform/staging` destroy, then the
-      installer's uninstall for `kube-agents-stg` (its key rings stay; key rings cannot be deleted).
-      It shares the minter and LiteLLM Workload Identity principals with kube-agents-host, and its
-      project-wide audits cost about $20 an hour in tokens.
+- [x] ~~Staging~~: kept for testing future upgrades before kube-agents-hub takes them. It shares the
+      minter and LiteLLM Workload Identity principals with kube-agents-host (accepted). Its scheduled
+      audits scan all of gke-demos-345619; the first runs at install cost about $20 in tokens, and
+      after that it idles at a few dollars a day. To retire it: `terraform/staging` destroy, then
+      the installer's uninstall for `kube-agents-stg` (its key rings stay; they cannot be deleted).
 - [ ] File the upstream kube-agents issues below once Gari agrees.
 
 ## Fixed on the way
