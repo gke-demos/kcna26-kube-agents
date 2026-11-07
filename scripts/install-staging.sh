@@ -36,6 +36,15 @@ readonly SLACK_HOME_CHANNEL="C0CFAPAV3HD"
 readonly SLACK_ALLOWED_USERS="U0CDYBNMHV1"
 readonly ALERT_CEILING=500
 readonly NAME_PREFIX="kagents-stg"
+# The installer keeps its Terraform working directory (backend_override.tf,
+# terraform.tfvars) in its kube-agents checkout: $HOME/kube-agents, unless it runs
+# from inside a checkout. ~/kube-agents is install-hub.sh's, and sharing it planned
+# the KubeCon install's state for replacement, so this install runs from its own.
+readonly WORK_DIR="${WORK_DIR:-$HOME/kcna26-staging}"
+readonly CHECKOUT="$WORK_DIR/kube-agents"
+readonly REPO_URL="https://github.com/gke-labs/kube-agents.git"
+readonly TF_DIR="terraform/examples/full-install"
+readonly STATE_PREFIX="kube-agents/$HUB_CLUSTER"
 
 installer="$CRED_DIR/install-$RELEASE.sh"
 [[ -f "$installer" ]] || {
@@ -72,7 +81,19 @@ set_once ENABLE_DRIFT_DETECTOR false
 pem_args=()
 [[ -f "$CRED_DIR/app.pem" ]] && pem_args=(--github-pem-path="$CRED_DIR/app.pem")
 
-cd "$HOME"
+if [[ ! -d "$CHECKOUT/.git" ]]; then
+  mkdir -p "$WORK_DIR"
+  git clone -q --filter=blob:none --branch "$RELEASE" "$REPO_URL" "$CHECKOUT"
+fi
+cd "$CHECKOUT"
+[[ "$(git describe --tags --exact-match 2>/dev/null)" == "$RELEASE" ]] ||
+  git -c advice.detachedHead=false checkout -q "$RELEASE"
+override="$TF_DIR/backend_override.tf"
+if [[ -f "$override" ]] && ! grep -q "\"$STATE_PREFIX\"" "$override"; then
+  echo "refusing: $CHECKOUT/$override names another install's state:" >&2
+  cat "$override" >&2
+  exit 1
+fi
 GOOGLE_CLOUD_QUOTA_PROJECT="$PROJECT" \
   KUBE_AGENTS_INSTALL_ENV="$install_env" \
   bash "$installer" "$@" \

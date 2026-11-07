@@ -42,6 +42,14 @@ pem_args=()
 [[ -f "$CRED_DIR/app.pem" ]] && pem_args=(--github-pem-path="$CRED_DIR/app.pem")
 
 cd "$HOME"
+# The installer keeps its Terraform working directory in ./kube-agents; refuse one
+# whose backend is another install's (install-staging.sh runs from its own directory).
+override="kube-agents/terraform/examples/full-install/backend_override.tf"
+if [[ -f "$override" ]] && ! grep -q "\"kube-agents/$HUB_CLUSTER\"" "$override"; then
+  echo "refusing: ~/$override names another install's state:" >&2
+  cat "$override" >&2
+  exit 1
+fi
 CLOUDSDK_ACTIVE_CONFIG_NAME="${CLOUDSDK_ACTIVE_CONFIG_NAME:-kcna26}" \
   GOOGLE_CLOUD_QUOTA_PROJECT="$PROJECT" \
   KUBE_AGENTS_INSTALL_ENV="$install_env" \
