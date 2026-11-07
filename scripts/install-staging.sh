@@ -13,6 +13,10 @@
 #     runs (a cluster created later is picked up by the hourly reconcile: re-run);
 #   - turns the drift detector off (its log sink reads every cluster in the project).
 #
+# It also turns on the web console (kube-agents' own browser workspace, read-only
+# incident threads while Slack is on), to judge it beside fleet-scope:
+#   kubectl --context <hub> port-forward -n kubeagents-system svc/kube-agents-web-console 8080:8080
+#
 # Usage: install-staging.sh [--dry-run]
 #   $CRED_DIR must hold app.pem (until KMS has imported it), slack-bot-token,
 #   slack-app-token and install-<release>.sh (the release's own install.sh).
@@ -85,6 +89,7 @@ GOOGLE_CLOUD_QUOTA_PROJECT="$PROJECT" \
   --github-app-id="$GITHUB_APP_ID" \
   "${pem_args[@]}" \
   --scope-exclude-clusters="$exclude_csv" \
+  --enable-web-console \
   --enable-slack \
   --slack-bot-token="$(<"$CRED_DIR/slack-bot-token")" \
   --slack-app-token="$(<"$CRED_DIR/slack-app-token")" \
