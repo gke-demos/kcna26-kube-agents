@@ -40,6 +40,7 @@ readonly HUB_CLUSTER="kube-agents-stg"
 readonly WORKLOAD_CLUSTERS=("boutique-stg")
 readonly REGION="us-central1"
 readonly VERTEX_LOCATION="global"
+readonly MODEL="gemini-3.8-flash"
 readonly FLEET_ORG="gke-demos"
 readonly FLEET_REPO_NAME="kcna26-fleet-gitops-staging"
 readonly GITHUB_APP_ID="5579804"
@@ -92,6 +93,7 @@ set_once ENABLE_DRIFT_DETECTOR false
 # script creates it first; upgrade.sh re-renders from install.env alone.
 set_once MODEL_PROVIDER vertex_ai
 set_once VERTEX_LOCATION "$VERTEX_LOCATION"
+set_once MODEL_DEFAULT_NAME "$MODEL"
 
 pem_args=()
 [[ -f "$CRED_DIR/app.pem" ]] && pem_args=(--github-pem-path="$CRED_DIR/app.pem")

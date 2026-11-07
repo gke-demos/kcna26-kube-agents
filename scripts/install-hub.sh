@@ -16,6 +16,9 @@ readonly REGION="us-central1"
 # Gemini on Vertex AI through Workload Identity: no API key. Newer Gemini
 # models are served from the global endpoint.
 readonly VERTEX_LOCATION="global"
+# The chart's Vertex default is gemini-3.5-flash; 3.8 Flash triaged faster in the
+# 2026-11-07 rehearsals (bad image to healthy 3:31 against 4:21).
+readonly MODEL="gemini-3.8-flash"
 readonly FLEET_ORG="gke-demos"
 readonly FLEET_REPO_NAME="kcna26-fleet-gitops"
 readonly GITHUB_APP_ID="5579804"
@@ -44,6 +47,7 @@ done
 # identity.
 grep -q "^MODEL_PROVIDER=" "$install_env" || echo "MODEL_PROVIDER=vertex_ai" >>"$install_env"
 grep -q "^VERTEX_LOCATION=" "$install_env" || echo "VERTEX_LOCATION=$VERTEX_LOCATION" >>"$install_env"
+grep -q "^MODEL_DEFAULT_NAME=" "$install_env" || echo "MODEL_DEFAULT_NAME=$MODEL" >>"$install_env"
 
 pem_args=()
 [[ -f "$CRED_DIR/app.pem" ]] && pem_args=(--github-pem-path="$CRED_DIR/app.pem")
