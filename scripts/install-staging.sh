@@ -84,6 +84,9 @@ set_once GKE_DB_KMS_KEYRING "$NAME_PREFIX-keyring"
 set_once KMS_KEYRING "$NAME_PREFIX-minter-keyring"
 set_once TF_VAR_agent_ksa_name "$NAME_PREFIX-platform-agent"
 set_once ENABLE_DRIFT_DETECTOR false
+# The installer does not record these flags; upgrade.sh re-renders from install.env.
+set_once MODEL_PROVIDER vertex_ai
+set_once VERTEX_LOCATION "$VERTEX_LOCATION"
 
 pem_args=()
 [[ -f "$CRED_DIR/app.pem" ]] && pem_args=(--github-pem-path="$CRED_DIR/app.pem")
