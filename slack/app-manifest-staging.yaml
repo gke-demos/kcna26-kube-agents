@@ -1,0 +1,56 @@
+# Slack app for the staging install (kube-agents-stg in gke-demos-345619), where a new
+# kube-agents release is tried before the KubeCon install moves to it.
+# Create with api.slack.com/apps -> Create New App -> From a manifest, in the same
+# workspace as the demo app, and give it its own channel (#platform-ops-staging).
+# It must be a separate app: two installs on one Socket Mode app token split the
+# app's events between them, so each would miss some of its messages.
+# Same as app-manifest.yaml except the names and descriptions; keep the two in step.
+# Keep callback_id ask_about_message: the gateway matches it.
+display_information:
+  name: kube-agents-staging
+  description: Staging install of Cymbal's platform agent, for trying new releases
+features:
+  app_home:
+    home_tab_enabled: true
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: kube-agents-staging
+    always_online: true
+  assistant_view:
+    assistant_description: Ask the staging kube-agents about its clusters.
+  shortcuts:
+    - name: Ask about this
+      type: message
+      callback_id: ask_about_message
+      description: kube-agents looks into this message and answers in its thread
+oauth_config:
+  scopes:
+    bot:
+      - assistant:write
+      - channels:history
+      - channels:read
+      - chat:write
+      - commands
+      - groups:history
+      - groups:read
+      - im:history
+      - im:read
+      - mpim:history
+      - mpim:read
+      - reactions:write
+      - users:read
+settings:
+  event_subscriptions:
+    bot_events:
+      - agent_session_stopped
+      - app_home_opened
+      - assistant_thread_started
+      - message.channels
+      - message.groups
+      - message.im
+      - message.mpim
+  interactivity:
+    is_enabled: true
+  socket_mode_enabled: true
+  token_rotation_enabled: false
