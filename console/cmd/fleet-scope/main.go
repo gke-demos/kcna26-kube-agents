@@ -60,6 +60,7 @@ func main() {
 	var (
 		addr       = flag.String("addr", envOr("SCOPE_ADDR", defaultAddr), "listen address")
 		project    = flag.String("project", envOr("SCOPE_PROJECT", defaultProject), "project whose clusters are drawn")
+		clusters   = flag.String("clusters", envOr("SCOPE_CLUSTERS", ""), "comma-separated cluster names to draw; empty draws every cluster in --project")
 		projectNum = flag.String("project-number", envOr("SCOPE_PROJECT_NUMBER", ""), "project number, for IAP's audience; required unless --dev-identity")
 		devID      = flag.String("dev-identity", "", "skip IAP and treat every request as this email (local development only)")
 		writers    = flag.String("writers", envOr("SCOPE_WRITERS", ""), "comma-separated emails or domain:example.com that may press buttons")
@@ -117,7 +118,7 @@ func main() {
 		}()
 	}
 
-	src := fleet.New(fleet.Options{Project: *project, Hub: *hub, AgentNamespace: *agentNS})
+	src := fleet.New(fleet.Options{Project: *project, Clusters: splitList(*clusters), Hub: *hub, AgentNamespace: *agentNS})
 	run("fleet", func(ctx context.Context) error { return src.Run(ctx, store) })
 
 	var act server.Actioner

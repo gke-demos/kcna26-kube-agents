@@ -84,6 +84,9 @@ var defaultExclude = []string{
 type Options struct {
 	// Project whose clusters are drawn.
 	Project string
+	// Clusters, when set, are the only clusters drawn, by name: for a project
+	// shared with clusters that are not the demo's.
+	Clusters []string
 	// Hub is the cluster kube-agents runs on; AgentNamespace its namespace
 	// there. On the hub only AgentNamespace's workloads are drawn.
 	Hub            string
@@ -142,9 +145,12 @@ func (s *Source) Run(ctx context.Context, sink collector.Sink) error {
 		return fmt.Errorf("fleet: GKE client: %w", err)
 	}
 	p := &poller{
-		o:       s.o,
-		sink:    sink,
-		list:    func(ctx context.Context) ([]gkeCluster, error) { return listClusters(ctx, svc, s.o.Project) },
+		o:    s.o,
+		sink: sink,
+		list: func(ctx context.Context) ([]gkeCluster, error) {
+			cs, err := listClusters(ctx, svc, s.o.Project)
+			return onlyNamed(cs, s.o.Clusters), err
+		},
 		connect: func(c gkeCluster) (kubernetes.Interface, error) { return connect(c, ts) },
 		states:  map[string]*clusterState{},
 	}
@@ -357,6 +363,20 @@ func listClusters(ctx context.Context, svc *container.Service, project string) (
 		out = append(out, toCluster(c))
 	}
 	return out, nil
+}
+
+// onlyNamed keeps the clusters whose names are in names; empty names keeps all.
+func onlyNamed(cs []gkeCluster, names []string) []gkeCluster {
+	if len(names) == 0 {
+		return cs
+	}
+	out := cs[:0:0]
+	for _, c := range cs {
+		if slices.Contains(names, c.Name) {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 func toCluster(c *container.Cluster) gkeCluster {
