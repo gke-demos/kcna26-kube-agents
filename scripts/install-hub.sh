@@ -37,9 +37,11 @@ touch "$install_env" && chmod 600 "$install_env"
 for key in ALERT_DAILY_LIMIT_CRITICAL ALERT_DAILY_LIMIT_WARNING; do
   grep -q "^$key=" "$install_env" || echo "$key=$ALERT_CEILING" >>"$install_env"
 done
-# The installer does not record --model-provider or --vertex-location in
-# install.env, and upgrade.sh re-renders from install.env alone: without these
-# a full upgrade plans to remove the Vertex AI gateway's identity.
+# This script creates install.env before the installer's first run, and the
+# installer writes its keys only into a new file, so --model-provider and
+# --vertex-location are never recorded. upgrade.sh re-renders from install.env
+# alone: without these a full upgrade plans to remove the Vertex AI gateway's
+# identity.
 grep -q "^MODEL_PROVIDER=" "$install_env" || echo "MODEL_PROVIDER=vertex_ai" >>"$install_env"
 grep -q "^VERTEX_LOCATION=" "$install_env" || echo "VERTEX_LOCATION=$VERTEX_LOCATION" >>"$install_env"
 
