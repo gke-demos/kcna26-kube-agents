@@ -86,6 +86,7 @@ type Slack struct {
 	workspace string // "https://<workspace>.slack.com/"
 	botUser   string
 	seen      map[string]map[string]bool // ts -> signal types emitted
+	edits     map[string]string          // ts -> the edit's ts last handled
 	threads   map[string]*thread
 	users     map[string]string
 	rr        int
@@ -138,6 +139,7 @@ func (s *Slack) Run(ctx context.Context, e Emitter, r Resolver) error {
 
 func (s *Slack) reset() {
 	s.seen = map[string]map[string]bool{}
+	s.edits = map[string]string{}
 	s.threads = map[string]*thread{}
 	s.users = map[string]string{}
 }
@@ -177,7 +179,8 @@ func (s *Slack) poll(ctx context.Context, e Emitter, r Resolver) error {
 	}
 	var evs []model.Event
 	for _, m := range msgs {
-		if s.seen[m.TS] == nil {
+		// New, or edited since (an alert edited into its triage report).
+		if s.seen[m.TS] == nil || s.editedSince(m) {
 			evs = append(evs, s.handle(ctx, m, nil, r)...)
 		}
 	}
@@ -305,8 +308,16 @@ func (s *Slack) thread(ts string) *thread {
 	return th
 }
 
+// editedSince says m carries an edit handle has not seen.
+func (s *Slack) editedSince(m slackMessage) bool {
+	e := editedTS(m)
+	return e != "" && s.edits[m.TS] != e
+}
+
 // handle turns one message into events. A message seen before yields only
-// what an edit added: a report (progress turned report) or a chosen fix.
+// what an edit added: a report (progress turned report, or an alert edited
+// into its report), a chosen fix, or a progress note's new text (a task card
+// edited in place), timed at the edit.
 func (s *Slack) handle(ctx context.Context, m slackMessage, th *thread, r Resolver) []model.Event {
 	if !postSubtypes[m.Subtype] || m.TS == "" {
 		return nil
@@ -328,13 +339,22 @@ func (s *Slack) handle(ctx context.Context, m slackMessage, th *thread, r Resolv
 		emitted = map[string]bool{}
 		s.seen[m.TS] = emitted
 	}
+	edit := editedTS(m)
+	fresh := s.editedSince(m)
+	if fresh {
+		s.edits[m.TS] = edit
+	}
 	var evs []model.Event
 	for _, sig := range classify(m, reply, bot) {
-		if emitted[sig.Type] {
+		renote := fresh && !first && sig.Type == model.EventTriage
+		if emitted[sig.Type] && !renote {
 			continue
 		}
-		if !first && sig.Type != model.EventTriageReport && sig.Type != model.EventFixChosen {
+		if !first && !renote && sig.Type != model.EventTriageReport && sig.Type != model.EventFixChosen {
 			continue
+		}
+		if renote && sig.TS == "" {
+			sig.TS = edit
 		}
 		emitted[sig.Type] = true
 		typ := sig.Type

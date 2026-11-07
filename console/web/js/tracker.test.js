@@ -238,6 +238,16 @@ test('PR step: the agent\'s notes after the report show while it writes the fix'
   assert.equal(byId(r, 'pr').detail, 'Editing deployment.yaml');
 });
 
+test('a fix PR without a readable report: investigating and report are done', () => {
+  const p = pressed();
+  const failing = model({ state: 'CRASHED', reason: 'OOMKilled', since: 70, sync: { 'boutique-prod': SHA } });
+  const sigs = incident(520).filter((e) => e.type !== 'triage_report' && e.type !== 'fix_chosen');
+  const r = deriveSteps(p, failing, sigs, ms(530));
+  assert.deepEqual([byId(r, 'investigating').state, byId(r, 'report').state, byId(r, 'fix').state, byId(r, 'pr').state], [DONE, DONE, DONE, DONE]);
+  assert.equal(byId(r, 'report').detail, 'In the Slack thread');
+  assert.equal(byId(r, 'report').at, ms(520));
+});
+
 test('booth auto-merge is named on the merged step', () => {
   const p = pressed();
   const failing = model({ state: 'CRASHED', reason: 'OOMKilled', since: 70, sync: { 'boutique-prod': SHA } });

@@ -218,17 +218,21 @@ func TestSlackEdits(t *testing.T) {
 		t.Fatalf("load: %v", got)
 	}
 
-	// The progress note is edited (same ts, new text): nothing new. The
-	// round-robin re-read finds it without a reply-count change.
+	// The progress note is edited (same ts, new text): one note with the new
+	// text, timed at the edit, found by the round-robin re-read without a
+	// reply-count change. A second poll adds nothing.
 	edited := progress
 	edited.Text = "recommendationservice crashloop in boutique-prod ◌ Identified that revision 3 is OOMKilled at 20Mi."
 	edited.Edited = &slackEdited{TS: "1793642460.000000"}
 	f.set(parent, []slackMessage{edited, posted})
-	if err := s.poll(context.Background(), rec, resolveAll); err != nil {
-		t.Fatal(err)
+	for range 2 {
+		if err := s.poll(context.Background(), rec, resolveAll); err != nil {
+			t.Fatal(err)
+		}
 	}
-	if evs := rec.take(); len(evs) != 0 {
-		t.Fatalf("edited progress emitted %v", types(evs))
+	if evs := rec.take(); len(evs) != 1 || evs[0].Type != model.EventTriage ||
+		evs[0].Title != "Identified that revision 3 is OOMKilled at 20Mi." || !evs[0].Time.Equal(tsTime("1793642460.000000")) {
+		t.Fatalf("edited progress emitted %+v", evs)
 	}
 
 	// Gari presses Option B; the agent posts its card.
@@ -273,6 +277,77 @@ func TestSlackProgressTurnsReport(t *testing.T) {
 	}
 	if evs[0].Title != "The pod is OOMKilled." || evs[0].Message != "Option A: Revert to 32Mi" {
 		t.Errorf("report %+v", evs[0])
+	}
+}
+
+// TestSlackAlertEditedIntoReport: kube-agents 0.25 under spec.mode next
+// (captured from the staging install, 2026-11-07, shortened) edits the alert
+// into the triage report and edits each task card in place.
+func TestSlackAlertEditedIntoReport(t *testing.T) {
+	s, f := newTestSlack(t)
+	s.now = func() time.Time { return tsTime("1794082700.000000") }
+	const alertTS, triageTS, prCardTS = "1794082403.984889", "1794082434.069509", "1794082495.336949"
+	const label = "Triage online-boutique/Pod/checkoutservice-56744697df-dp6kr (Failed) on boutique-stg"
+	alert := slackMessage{TS: alertTS, BotID: "B1", ReplyCount: 2, LatestReply: prCardTS,
+		Text: ":large_yellow_circle: *Warning:* Failed `online-boutique/checkoutservice` — Failed to pull image \"checkoutservice:v0.10.70\": not found"}
+	triage := slackMessage{TS: triageTS, ThreadTS: alertTS, BotID: "B1", Text: label + " ◌ " + label}
+	prCard := slackMessage{TS: prCardTS, ThreadTS: alertTS, BotID: "B1",
+		Text: "Open GitOps PR for online-boutique/Pod/checkoutservice-56744697df-dp6kr (Failed) on boutique-stg ◌ Open GitOps PR"}
+	f.set(alert, []slackMessage{triage, prCard})
+	rec := &recorder{}
+	if err := s.load(context.Background(), rec, resolveAll); err != nil {
+		t.Fatal(err)
+	}
+	if got := types(rec.take()); strings.Join(got, ",") != "alert,triage,triage" {
+		t.Fatalf("load: %v", got)
+	}
+
+	// The triage finishes: its card and the alert are edited; no reply is added.
+	report := alert
+	report.Text = "*State at 20:14 UTC: The checkoutservice deployment's new Pod is stuck in ErrImagePull.*  *What's wrong*  " +
+		"State at 20:14 UTC: The checkoutservice deployment's new Pod is stuck in ErrImagePull because the image tag v0.10.70 cannot be found. " +
+		"More detail.  *Why*  • The deployment moved to v0.10.70."
+	report.Edited = &slackEdited{TS: "1794082580.000000"}
+	done := triage
+	done.Text = label + " ✓ State at 20:14 UTC: checkoutservice-56744697df-dp6kr is stuck in ErrImagePull. Proposed fix is to revert the image tag."
+	done.Edited = &slackEdited{TS: "1794082494.000000"}
+	f.set(report, []slackMessage{done, prCard})
+	for range 3 {
+		if err := s.poll(context.Background(), rec, resolveAll); err != nil {
+			t.Fatal(err)
+		}
+	}
+	evs := rec.take()
+	if got := types(evs); strings.Join(got, ",") != "triage_report,triage" {
+		t.Fatalf("after the edits: %v", got)
+	}
+	rep, note := evs[0], evs[1]
+	if rep.Thread != alertTS || rep.TS != alertTS || rep.Key != "boutique-stg/checkoutservice" ||
+		rep.Title != "The checkoutservice deployment's new Pod is stuck in ErrImagePull because the image tag v0.10.70 cannot be found." {
+		t.Errorf("report %+v", rep)
+	}
+	if note.TS != triageTS || !note.Time.Equal(tsTime("1794082494.000000")) || !strings.HasPrefix(note.Title, "State at 20:14 UTC: checkoutservice") {
+		t.Errorf("note %+v", note)
+	}
+
+	// Nothing changes: nothing new.
+	for range 2 {
+		if err := s.poll(context.Background(), rec, resolveAll); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if evs := rec.take(); len(evs) != 0 {
+		t.Fatalf("idle polls emitted %v", types(evs))
+	}
+}
+
+// TestSlackEditedTopLevelChatIsNotAReport: an edited top-level message
+// without "What's wrong" (an audit card's "What to do") stays chat.
+func TestSlackEditedTopLevelChatIsNotAReport(t *testing.T) {
+	m := slackMessage{TS: "1794082000.000000", BotID: "B1", Edited: &slackEdited{TS: "1794082100.000000"},
+		Text: ":clipboard: *Compliance audit*  *What to do*  • Review the findings."}
+	if got := classify(m, false, true); len(got) != 1 || got[0].Type == model.EventTriageReport {
+		t.Fatalf("got %+v", got)
 	}
 }
 

@@ -449,6 +449,18 @@ function incidentSteps(ctx) {
   const merged = prs.find((e) => e.type === 'pr_merged' && samePR(e));
   const closed = !merged && prs.find((e) => e.type === 'pr_closed' && samePR(e));
   const prNum = (u) => /\/pull\/(\d+)/.exec(u || '')?.[1] || '';
+  if (!report && (opened || merged)) {
+    // A fix PR without a report the console could read (its Slack layout
+    // moved): the investigation is over, and the report is in the thread.
+    const at = atOf(opened || merged);
+    for (const s of [inv, rep]) {
+      s.state = DONE;
+      s.at = at;
+      s.hint = '';
+    }
+    rep.detail = 'In the Slack thread';
+    rep.thread = thread;
+  }
 
   const pr = step('pr', 'PR opened', { usual: PR_MS, hint: 'The Platform Agent opens a GitOps pull request on the fleet repo' });
   if (opened || merged) {

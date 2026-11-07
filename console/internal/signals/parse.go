@@ -210,6 +210,12 @@ type signal struct {
 func classify(m slackMessage, reply, bot bool) []signal {
 	text := m.Text
 	if !reply {
+		// Under spec.mode next (kube-agents 0.24 on) the triage edits its alert
+		// into the report: the edited alert carries "What's wrong". Requiring the
+		// edit keeps a top-level audit card from reading as a report.
+		if bot && editedTS(m) != "" && wrongRe.MatchString(text) {
+			return classifyReport(m)
+		}
 		return []signal{classifyTop(text)}
 	}
 	if !bot {
@@ -238,6 +244,14 @@ func classify(m slackMessage, reply, bot bool) []signal {
 		return []signal{s}
 	}
 	return []signal{chat(text)}
+}
+
+// editedTS is the ts of a message's last edit, or "" if it was never edited.
+func editedTS(m slackMessage) string {
+	if m.Edited == nil {
+		return ""
+	}
+	return m.Edited.TS
 }
 
 // classifyTop reads a top-level message: an alert, or chat (drift notes,
@@ -329,8 +343,8 @@ func classifyReport(m slackMessage) []signal {
 			}
 		}
 		ts := m.TS
-		if m.Edited != nil && m.Edited.TS != "" {
-			ts = m.Edited.TS
+		if e := editedTS(m); e != "" {
+			ts = e
 		}
 		out = append(out, signal{Type: model.EventFixChosen, Title: clip(t, maxTitle), Actor: who, TS: ts, FromEdit: true})
 	}
