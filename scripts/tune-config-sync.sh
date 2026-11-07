@@ -9,15 +9,17 @@
 # RootSync is not reverted (checked over 5 minutes on 2026-11-03). Run after
 # terraform/ and whenever a cluster is re-created.
 #
-# Usage: tune-config-sync.sh
+# Usage: tune-config-sync.sh [CLUSTER...]   (default: the KubeCon clusters; staging: boutique-stg)
 set -euo pipefail
 
-readonly CLUSTERS=(boutique-prod bank-prod)
+readonly DEFAULT_CLUSTERS=(boutique-prod bank-prod)
 readonly NAMESPACE="config-management-system"
 readonly ROOTSYNC="root-sync"
 readonly TIMEOUT="15s"
 
-for c in "${CLUSTERS[@]}"; do
+clusters=("$@")
+[[ ${#clusters[@]} -gt 0 ]] || clusters=("${DEFAULT_CLUSTERS[@]}")
+for c in "${clusters[@]}"; do
   kubectl --context "$c" -n "$NAMESPACE" patch rootsync "$ROOTSYNC" --type merge \
     -p "{\"spec\":{\"override\":{\"reconcileTimeout\":\"$TIMEOUT\"}}}"
 done

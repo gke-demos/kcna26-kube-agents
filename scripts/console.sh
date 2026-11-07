@@ -17,11 +17,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 readonly CONSOLE_DIR="$SCRIPT_DIR/../console"
 readonly PROJECT="${PROJECT:-kcna-2026-demos}"
-readonly IMAGE_REPO="us-central1-docker.pkg.dev/$PROJECT/fleet-scope/fleet-scope"
+# The image lives in the KubeCon project for every install, staging included.
+readonly IMAGE_PROJECT="${IMAGE_PROJECT:-kcna-2026-demos}"
+readonly IMAGE_REPO="us-central1-docker.pkg.dev/$IMAGE_PROJECT/fleet-scope/fleet-scope"
 readonly REGISTRY_HOST="us-central1-docker.pkg.dev"
 readonly CONTEXT="${HUB_CONTEXT:-kube-agents-hub}"
 readonly NAMESPACE="fleet-scope"
 readonly CRED_DIR="${CRED_DIR:-$HOME/.kcna26}"
+# console/deploy/fleet-scope-staging.yaml for the staging hub.
+readonly MANIFEST="${CONSOLE_MANIFEST:-$CONSOLE_DIR/deploy/fleet-scope.yaml}"
 readonly LOCAL_PORT=18080
 readonly PLATFORM="linux/amd64"
 readonly ROLLOUT_TIMEOUT="300s"
@@ -67,7 +71,7 @@ case "${1:-}" in
       shift
     fi
     tag="${1:-$(tag_default)}"
-    kubectl --context "$CONTEXT" apply -f <(sed -n '1,/^---$/p' "$CONSOLE_DIR/deploy/fleet-scope.yaml")
+    kubectl --context "$CONTEXT" apply -f <(sed -n '1,/^---$/p' "$MANIFEST")
     secret_from_file fleet-scope-slack token "$CRED_DIR/slack-bot-token"
     if [[ -s "$CRED_DIR/github-pat" ]]; then
       secret_from_file fleet-scope-github token "$CRED_DIR/github-pat"
@@ -76,7 +80,7 @@ case "${1:-}" in
     fi
     dev_sed='s|^(\s*)- --github-token-file|&|'
     $dev && dev_sed="s|^(\\s*)- --github-token-file|\\1- $DEV_FLAG\\n&|"
-    sed -E -e "s|image: IMAGE|image: $IMAGE_REPO:$tag|" -e "$dev_sed" "$CONSOLE_DIR/deploy/fleet-scope.yaml" |
+    sed -E -e "s|image: IMAGE|image: $IMAGE_REPO:$tag|" -e "$dev_sed" "$MANIFEST" |
       kubectl --context "$CONTEXT" apply -f -
     k rollout restart deploy/fleet-scope >/dev/null
     k rollout status deploy/fleet-scope --timeout="$ROLLOUT_TIMEOUT"

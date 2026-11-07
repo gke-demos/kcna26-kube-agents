@@ -1,0 +1,113 @@
+# fleet-scope on the staging hub (kube-agents-stg in gke-demos-345619), reached by
+# port-forward with --dev: no Gateway. Same as fleet-scope.yaml except the identity,
+# project, hub, repo, channel and cluster allowlist (gke-demos holds other demos'
+# clusters). Deploy with:
+#   HUB_CONTEXT=kube-agents-stg CRED_DIR=~/.kcna26/staging \
+#     CONSOLE_MANIFEST=console/deploy/fleet-scope-staging.yaml scripts/console.sh deploy --dev TAG
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fleet-scope
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fleet-scope
+  namespace: fleet-scope
+  annotations:
+    # roles/container.viewer on the project, nothing else (terraform/staging/console.tf).
+    iam.gke.io/gcp-service-account: kcna26-stg-fleet-scope@gke-demos-345619.iam.gserviceaccount.com
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleet-scope
+  namespace: fleet-scope
+  labels:
+    app: fleet-scope
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fleet-scope
+  template:
+    metadata:
+      labels:
+        app: fleet-scope
+    spec:
+      serviceAccountName: fleet-scope
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: fleet-scope
+          image: IMAGE
+          args:
+            - --hub=kube-agents-stg
+            - --github-token-file=/secrets/github/token
+            - --slack-token-file=/secrets/slack/token
+          env:
+            - name: SCOPE_PROJECT
+              value: gke-demos-345619
+            - name: SCOPE_PROJECT_NUMBER
+              value: "1067056737933"
+            - name: SCOPE_CLUSTERS
+              value: kube-agents-stg,boutique-stg
+            - name: SCOPE_REPO
+              value: gke-demos/kcna26-fleet-gitops-staging
+            - name: SCOPE_SLACK_CHANNEL
+              value: C0CFAPAV3HD
+            - name: SCOPE_WRITERS
+              value: domain:google.com,garisingh@gke.ninja
+            - name: SCOPE_LINKS
+              value: >-
+                Slack #platform-ops-staging=https://kubeagentsdemo.slack.com/archives/C0CFAPAV3HD,
+                Fleet repo=https://github.com/gke-demos/kcna26-fleet-gitops-staging,
+                Online Boutique=http://34.70.65.176
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: github
+              mountPath: /secrets/github
+              readOnly: true
+            - name: slack
+              mountPath: /secrets/slack
+              readOnly: true
+      volumes:
+        - name: github
+          secret:
+            secretName: fleet-scope-github
+            optional: true
+        - name: slack
+          secret:
+            secretName: fleet-scope-slack
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleet-scope
+  namespace: fleet-scope
+spec:
+  selector:
+    app: fleet-scope
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
