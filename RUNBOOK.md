@@ -25,6 +25,10 @@ Prerequisites, none of which needs the project:
   - Create `#platform-ops`, `/invite @kube-agents`, and copy its Channel ID.
   - Collect the member IDs of everyone who will drive the demo.
   - Full detail: [Slack app setup](https://gke-labs.github.io/kube-agents/install/slack-app/).
+  - The staging install gets its own app from
+    [`slack/app-manifest-staging.yaml`](slack/app-manifest-staging.yaml), the same steps with
+    `#platform-ops-staging`, `/invite @kube-agents-staging` and the tokens under
+    `~/.kcna26/staging/`.
 - **Fleet repo** `gke-demos/kcna26-fleet-gitops` (public) at its `baseline` tag.
 
 Then, in the project (`kcna-2026-demos`). Run gcloud under a configuration whose account owns the
