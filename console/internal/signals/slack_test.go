@@ -318,11 +318,12 @@ func TestSlackAlertEditedIntoReport(t *testing.T) {
 		}
 	}
 	evs := rec.take()
-	if got := types(evs); strings.Join(got, ",") != "triage_report,triage" {
+	// In time order: the card's edit, then the alert's (the report).
+	if got := types(evs); strings.Join(got, ",") != "triage,triage_report" {
 		t.Fatalf("after the edits: %v", got)
 	}
-	rep, note := evs[0], evs[1]
-	if rep.Thread != alertTS || rep.TS != alertTS || rep.Key != "boutique-stg/checkoutservice" ||
+	note, rep := evs[0], evs[1]
+	if rep.Thread != alertTS || rep.TS != alertTS || rep.Key != "boutique-stg/checkoutservice" || !rep.Time.Equal(tsTime("1794082580.000000")) ||
 		rep.Title != "The checkoutservice deployment's new Pod is stuck in ErrImagePull because the image tag v0.10.70 cannot be found." {
 		t.Errorf("report %+v", rep)
 	}

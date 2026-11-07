@@ -214,7 +214,10 @@ func classify(m slackMessage, reply, bot bool) []signal {
 		// into the report: the edited alert carries "What's wrong". Requiring the
 		// edit keeps a top-level audit card from reading as a report.
 		if bot && editedTS(m) != "" && wrongRe.MatchString(text) {
-			return classifyReport(m)
+			// The report arrived with the edit, not with the alert.
+			out := classifyReport(m)
+			out[0].TS = editedTS(m)
+			return out
 		}
 		return []signal{classifyTop(text)}
 	}
