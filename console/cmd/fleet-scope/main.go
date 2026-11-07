@@ -61,6 +61,7 @@ func main() {
 		addr       = flag.String("addr", envOr("SCOPE_ADDR", defaultAddr), "listen address")
 		project    = flag.String("project", envOr("SCOPE_PROJECT", defaultProject), "project whose clusters are drawn")
 		clusters   = flag.String("clusters", envOr("SCOPE_CLUSTERS", ""), "comma-separated cluster names to draw; empty draws every cluster in --project")
+		renames    = flag.String("cluster-names", envOr("SCOPE_CLUSTER_NAMES", ""), "the buttons' clusters under this install's names, from=to comma-separated (boutique-prod=boutique-stg)")
 		projectNum = flag.String("project-number", envOr("SCOPE_PROJECT_NUMBER", ""), "project number, for IAP's audience; required unless --dev-identity")
 		devID      = flag.String("dev-identity", "", "skip IAP and treat every request as this email (local development only)")
 		writers    = flag.String("writers", envOr("SCOPE_WRITERS", ""), "comma-separated emails or domain:example.com that may press buttons")
@@ -126,7 +127,7 @@ func main() {
 		gh := signals.NewGitHub(signals.GitHubOptions{Token: tok, Repo: *repo, AuditBranchPrefix: *auditPfx})
 		run("github", func(ctx context.Context) error { return gh.Run(ctx, store, resolve) })
 		if *actionsOn {
-			runner := actions.New(actions.Options{Token: tok, Repo: *repo, Branch: *branch, BaselineTag: *baseline, AuditBranchPrefix: *auditPfx})
+			runner := actions.New(actions.Options{Token: tok, Repo: *repo, Branch: *branch, BaselineTag: *baseline, AuditBranchPrefix: *auditPfx, ClusterNames: parsePairs(*renames)})
 			act = runner
 			if *autoReset > 0 {
 				slog.Info("auto-reset on", "idle", autoReset.String())
@@ -220,6 +221,17 @@ func splitList(v string) []string {
 	for _, s := range strings.Split(v, ",") {
 		if s = strings.TrimSpace(s); s != "" {
 			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// parsePairs reads from=to,from=to; an entry without "=" is skipped.
+func parsePairs(v string) map[string]string {
+	out := map[string]string{}
+	for _, kv := range splitList(v) {
+		if from, to, ok := strings.Cut(kv, "="); ok && from != "" && to != "" {
+			out[strings.TrimSpace(from)] = strings.TrimSpace(to)
 		}
 	}
 	return out

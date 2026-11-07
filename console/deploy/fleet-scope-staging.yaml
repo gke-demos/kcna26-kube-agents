@@ -54,12 +54,16 @@ spec:
               value: "1067056737933"
             - name: SCOPE_CLUSTERS
               value: kube-agents-stg,boutique-stg
+            - name: SCOPE_CLUSTER_NAMES
+              value: boutique-prod=boutique-stg
             - name: SCOPE_REPO
               value: gke-demos/kcna26-fleet-gitops-staging
             - name: SCOPE_SLACK_CHANNEL
               value: C0CFAPAV3HD
+            # dev@port-forward.local is --dev's identity: on staging, reaching the
+            # console at all takes port-forward rights on the hub.
             - name: SCOPE_WRITERS
-              value: domain:google.com,garisingh@gke.ninja
+              value: domain:google.com,garisingh@gke.ninja,dev@port-forward.local
             - name: SCOPE_LINKS
               value: >-
                 Slack #platform-ops-staging=https://kubeagentsdemo.slack.com/archives/C0CFAPAV3HD,

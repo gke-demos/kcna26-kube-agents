@@ -180,6 +180,9 @@ type Options struct {
 	BaselineTag string
 	// AuditBranchPrefix marks PRs reset leaves open.
 	AuditBranchPrefix string
+	// ClusterNames maps this demo's cluster names (boutique-prod, bank-prod) to
+	// the names an install's fleet repo uses, e.g. boutique-prod=boutique-stg.
+	ClusterNames map[string]string
 	// HTTPClient defaults to http.DefaultClient; BaseURL to the GitHub API.
 	HTTPClient *http.Client
 	BaseURL    string
@@ -191,6 +194,16 @@ type Runner struct {
 	// sem serializes Run: two quick presses must not race on one file's sha
 	// or the branch head.
 	sem chan struct{}
+}
+
+// workload is where target's manifest lives in this install's fleet repo.
+func (r *Runner) workload(target string) (workload, bool) {
+	w, ok := workloads[target]
+	if n := r.o.ClusterNames[w.cluster]; ok && n != "" {
+		w.dir = strings.Replace(w.dir, clustersDir+pathSeparator+w.cluster+pathSeparator, clustersDir+pathSeparator+n+pathSeparator, 1)
+		w.cluster = n
+	}
+	return w, ok
 }
 
 // New returns a runner.
@@ -232,7 +245,7 @@ func (r *Runner) Run(ctx context.Context, action, target, by string) (server.Act
 	if i := strings.LastIndex(link, commitURLMarker); i >= 0 {
 		res.Commit = link[i+len(commitURLMarker):]
 	}
-	if w, ok := workloads[target]; ok && target != "" {
+	if w, ok := r.workload(target); ok && target != "" {
 		res.Cluster = w.cluster
 		res.Key = w.cluster + pathSeparator + target
 	}
@@ -271,7 +284,7 @@ func (r *Runner) do(ctx context.Context, action, target, by string) (string, str
 	defer func() { <-r.sem }()
 
 	trailer := fmt.Sprintf(trailerFmt, presser(by))
-	w := workloads[target]
+	w, _ := r.workload(target)
 	switch action {
 	case ActionOOM:
 		msg := fmt.Sprintf(oomSubjectFmt, target, squeezedMemory) + subjectBodyGlue + oomBody + subjectBodyGlue + trailer

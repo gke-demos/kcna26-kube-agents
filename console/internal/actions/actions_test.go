@@ -715,3 +715,20 @@ func TestRunReportsWhatToFollow(t *testing.T) {
 		t.Fatalf("result = %+v", res)
 	}
 }
+
+func TestClusterNames(t *testing.T) {
+	f, r := newFake(t)
+	r.o.ClusterNames = map[string]string{"boutique-prod": "boutique-stg"}
+	f.files["clusters/boutique-stg/namespaces/online-boutique/frontend.yaml"] = f.files[fePath]
+	delete(f.files, fePath)
+	res, err := r.Run(context.Background(), "trigger-badimage", "frontend", by)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Key != "boutique-stg/frontend" || res.Cluster != "boutique-stg" || !strings.Contains(res.Title, "on boutique-stg") {
+		t.Fatalf("result = %+v", res)
+	}
+	if len(f.puts) != 1 || f.puts[0].path != "clusters/boutique-stg/namespaces/online-boutique/frontend.yaml" {
+		t.Fatalf("puts = %+v", f.puts)
+	}
+}
