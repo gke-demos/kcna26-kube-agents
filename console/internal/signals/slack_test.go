@@ -344,6 +344,28 @@ func TestSlackAlertEditedIntoReport(t *testing.T) {
 
 // TestSlackEditedTopLevelChatIsNotAReport: an edited top-level message
 // without "What's wrong" (an audit card's "What to do") stays chat.
+// TestNewCardFirstPost: kube-agents 0.31 posts a task card first as the running
+// mark and the step alone (staging, 2026-11-14), where 0.25 posted
+// "<label> ◌ <label>". Both read as the same triage note.
+func TestNewCardFirstPost(t *testing.T) {
+	const label = "Triage online-boutique/Pod/productcatalogservice-6bff8fffb9-w59ff (Failed) on boutique-stg"
+	for _, text := range []string{"◌ " + label, label + " ◌ " + label} {
+		got := classify(slackMessage{TS: "1794656439.921559", BotID: "B1", Text: text}, true, true)
+		if len(got) != 1 || got[0].Type != model.EventTriage || got[0].Title != label || got[0].Cluster != "boutique-stg" {
+			t.Errorf("%q: %+v", text, got)
+		}
+	}
+	// A crash-loop card names its workload and cluster in the label.
+	got := classify(slackMessage{TS: "1", BotID: "B1", Text: "◌ node-exporter crashloop in ap-iap-testing"}, true, true)
+	if len(got) != 1 || got[0].Type != model.EventTriage || got[0].Name != "node-exporter" || got[0].Cluster != "ap-iap-testing" {
+		t.Errorf("crashloop card: %+v", got)
+	}
+	// A recorded choice keeps its own reading.
+	if got := classify(slackMessage{TS: "1", BotID: "B1", Text: "✓ Gari Singh: Increase to 64Mi"}, true, true); len(got) == 1 && got[0].Type == model.EventTriage && got[0].Title == "Gari Singh: Increase to 64Mi" {
+		t.Errorf("choice line read as a new card: %+v", got)
+	}
+}
+
 func TestSlackEditedTopLevelChatIsNotAReport(t *testing.T) {
 	m := slackMessage{TS: "1794082000.000000", BotID: "B1", Edited: &slackEdited{TS: "1794082100.000000"},
 		Text: ":clipboard: *Compliance audit*  *What to do*  • Review the findings."}

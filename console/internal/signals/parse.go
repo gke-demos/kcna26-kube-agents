@@ -79,6 +79,9 @@ var (
 	crashLabelRe = regexp.MustCompile(`^([a-z0-9][a-z0-9.-]*) crashloop in ([a-z0-9][a-z0-9-]*[a-z0-9])$`)
 	// cardRe splits a task card "<label> ◌ <step>".
 	cardRe = regexp.MustCompile(`(?s)^(.+?) (` + markRunning + `|` + markDone + `|` + markFailed + `) (.+)$`)
+	// newCardRe captures a task card's first post under kube-agents 0.31: the
+	// running mark, then the step, with no label before it ("◌ Triage …").
+	newCardRe = regexp.MustCompile(`^` + markRunning + ` ([^\n]+)$`)
 	// stepSuffixRe trims a card's "· step 2 ▸" progress suffix.
 	stepSuffixRe = regexp.MustCompile(`\s*·\s*step \d+\s*▸?\s*$`)
 	// applyLabelRe marks the task card the agent runs for a chosen fix.
@@ -233,6 +236,9 @@ func classify(m slackMessage, reply, bot bool) []signal {
 	}
 	if reportRe.MatchString(text) {
 		return classifyReport(m)
+	}
+	if sm := newCardRe.FindStringSubmatch(strings.TrimSpace(text)); sm != nil {
+		return []signal{classifyCard(sm[1], sm[1])}
 	}
 	if sm := cardRe.FindStringSubmatch(text); sm != nil && !strings.Contains(sm[1], "\n") {
 		return []signal{classifyCard(sm[1], sm[3])}
