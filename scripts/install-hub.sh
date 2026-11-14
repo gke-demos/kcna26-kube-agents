@@ -8,7 +8,7 @@
 #   slack-app-token and install-<release>.sh (the release's own install.sh).
 set -euo pipefail
 
-readonly RELEASE="0.25.0"
+readonly RELEASE="0.31.0"
 readonly PROJECT="${PROJECT:-kcna-2026-demos}"
 readonly CRED_DIR="${CRED_DIR:-$HOME/.kcna26}"
 readonly HUB_CLUSTER="kube-agents-hub"

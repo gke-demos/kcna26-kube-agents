@@ -70,8 +70,9 @@ should be the one who merges.
 ## Limits
 
 - **Slack only.** Alerts, triage notes, reports and chosen fixes come from parsing the bot's Slack
-  messages as kube-agents 0.23.0 and 0.25.0 format them (0.24 and later edit the alert into its report and each
-  task card in place); another release can change those formats. A console started after an alert was edited
+  messages as kube-agents 0.23.0 to 0.31.0 format them (0.24 and later edit the alert into its report and each
+  task card in place; 0.31 posts a card first as its mark and step alone); another release can change those
+  formats. A console started after an alert was edited
   has no alert for that incident.
 - **One project.** It draws the GKE clusters of `--project`; kube-agents scopes that span projects,
   folders or organizations are not followed.

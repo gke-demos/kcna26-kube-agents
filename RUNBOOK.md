@@ -55,8 +55,9 @@ scripts/contexts.sh $PROJECT
 # Merged fixes land in ~30s instead of waiting up to 5 minutes behind the broken apply.
 scripts/tune-config-sync.sh
 
-# The triage opens its recommended fix as a PR itself (a human still merges). Re-run after
-# any install-hub.sh run: the installer rewrites the PlatformAgent's env.
+# Checks the agent's demo settings: the triage opens its recommended fix as a PR itself (a
+# human still merges), and a repeat break within 15 minutes folds into its incident. They are
+# chart values in install.env's TF_VAR_extra_helm_values line, which install-hub.sh writes.
 scripts/tune-agent.sh
 
 # The console, at https://kcna26.demo.gke.ninja behind IAP (needs ~/.kcna26/github-pat and
@@ -81,13 +82,10 @@ kubectl --context kube-agents-hub exec -n kubeagents-system deploy/platform-agen
   -c platform-agent -- ls /opt/data/profiles
 ```
 
-**Then restart the agent pod once.** The event watcher reads that list only at startup, and on a
-fresh install it starts before the Cluster Agents exist, so it watches the hub alone. The same
-applies whenever a cluster joins later (the compute demo cluster):
+Since 0.24 the event watcher rescans that list, so a cluster that joins later (the compute
+demo cluster, `autoscale-arcade`, did on 2026-11-14) is watched without a restart. Check:
 
 ```bash
-kubectl --context kube-agents-hub delete pod -n kubeagents-system \
-  -l app=platform-agent-gateway
 kubectl --context kube-agents-hub logs -n kubeagents-system deploy/platform-agent-gateway \
   -c agent-api-auth | grep 'watching .* cluster(s)'   # expect every cluster
 ```
@@ -106,17 +104,22 @@ Install troubleshooting from the first build (2026-11-02, release 0.23.0):
 - **Helm `context deadline exceeded`** on the first apply: Autopilot was still adding nodes.
   Re-run.
 
-Leave `INCIDENT_TRIAGE_OPEN_PULL_REQUEST` unset: the presenter clicking the fix option is the
-human-in-the-loop moment.
+`INCIDENT_TRIAGE_OPEN_PULL_REQUEST` is on: the agent opens its recommended fix as a PR by
+itself, and the human-in-the-loop moment is the merge.
 
-**Freeze** after the first clean run-through: record the image tag here and do not upgrade.
-Never restart the gateway during a session; it runs as a single replica.
+Installed: release `0.23.0` on 2026-11-02; `0.25.0` on 2026-11-07; `0.31.0` on 2026-11-14, each
+upgraded in place after the staging install passed the same incidents. The A2A gateway runs two
+replicas with an elected leader (0.26 on); the bus stays on one NATS server, because an existing
+bus cannot change its server count.
 
-Installed: release `0.23.0` on 2026-11-02; upgraded in place to `0.25.0` on 2026-11-07 after a fresh 0.25.0 install
-on the staging hub passed the same incidents. Upgrade with the release's `upgrade.sh --upgrade-mode=full`, `--plan` first:
-`install.env` must carry `MODEL_PROVIDER` and `VERTEX_LOCATION` (`install-hub.sh` adds them), or the plan removes the
-Vertex AI gateway's identity. An upgrade's CRD apply and a console deploy each raise drift alerts and drift triage
-cards: archive the cards and clear the channel afterwards. Frozen once the first run-through is clean.
+**Upgrading.** Try the release on staging first, then prod, with `scripts/upgrade.sh staging|prod`,
+`--plan` first. The release's `upgrade.sh` re-renders the install from `install.env` alone, so
+every setting lives there: `MODEL_PROVIDER`, `VERTEX_LOCATION`, `MODEL_DEFAULT_NAME`,
+`TF_VAR_extra_helm_values` and, on staging, `SCOPE_EXCLUDE_CLUSTERS` (`scripts/upgrade.sh` refuses
+a file missing one). A missing model provider plans the removal of the Vertex AI gateway's
+identity; missing exclusions let staging adopt every cluster in gke-demos-345619. An upgrade's
+Helm apply and a console deploy each raise drift alerts and drift triage cards: run
+`scripts/archive-drift-cards.sh`, clear the channel, then `scripts/preflight.sh`.
 
 ## 2. Pre-stage the audits
 

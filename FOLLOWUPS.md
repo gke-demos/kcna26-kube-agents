@@ -50,8 +50,21 @@ Friday are for re-runs and recording. Strike items through as they close.
 - [x] ~~Staging~~: kept for testing future upgrades before kube-agents-hub takes them. It shares the
       minter and LiteLLM Workload Identity principals with kube-agents-host (accepted). Its scheduled
       audits scan all of gke-demos-345619; the first runs at install cost about $20 in tokens, and
-      after that it idles at a few dollars a day. To retire it: `terraform/staging` destroy, then
-      the installer's uninstall for `kube-agents-stg` (its key rings stay; they cannot be deleted).
+      after that it idles at a few dollars a day (0.26 on: audits slow to weekly after 7 days with
+      no chat message, and stop after 14). To retire it: `terraform/staging` destroy, then the
+      installer's uninstall for `kube-agents-stg` (its key rings stay; they cannot be deleted).
+- [x] ~~kube-agents 0.31.0~~ on 2026-11-14, staging then prod (`scripts/upgrade.sh`). The agent's
+      settings moved to chart values (`TF_VAR_extra_helm_values`): 0.26 replaces hand-added
+      PlatformAgent env. Staging rehearsal: bad image → PR in 2:03, healthy in 3:12. The console
+      reads 0.31's new first card post. The compute demo cluster (`autoscale-arcade`) joined
+      kcna-2026-demos and has a Cluster Agent.
+- [x] ~~Staging's scope~~: `install-staging.sh` passed its cluster exclusions as a flag only, so the
+      first `upgrade.sh` run (2026-11-07) dropped them and staging covered all 20 clusters in
+      gke-demos-345619 until 2026-11-14 (about 140 triages, mostly `ap-iap-testing`; no PRs: the
+      agent refuses a workload its GitOps repo does not declare). Now in `install.env`, rewritten
+      on every `install-staging.sh` run.
+- [ ] Bus HA: kube-agents cannot yet change an existing bus's server count (0.29 makes new buses
+      three servers). Watch for upstream support, or recreate the bus (loses its stored sessions).
 - [ ] File the upstream kube-agents issues below once Gari agrees.
 
 ## Fixed on the way
