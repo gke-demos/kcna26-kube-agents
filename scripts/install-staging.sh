@@ -33,7 +33,7 @@
 #   slack-app-token and install-<release>.sh (the release's own install.sh).
 set -euo pipefail
 
-readonly RELEASE="0.25.0"
+readonly RELEASE="0.31.0"
 readonly PROJECT="gke-demos-345619"
 readonly CRED_DIR="${CRED_DIR:-$HOME/.kcna26/staging}"
 readonly HUB_CLUSTER="kube-agents-stg"
@@ -41,6 +41,9 @@ readonly WORKLOAD_CLUSTERS=("boutique-stg")
 readonly REGION="us-central1"
 readonly VERTEX_LOCATION="global"
 readonly MODEL="gemini-3.8-flash"
+# The agent's auto-PR and fold-in settings, as chart values: since 0.26 the chart
+# replaces entries added to the PlatformAgent's env by hand.
+readonly EXTRA_HELM_VALUES='{platformAgent={deployment={env=[{name="INCIDENT_TRIAGE_OPEN_PULL_REQUEST",value="true"}],incidentWorkloadDedupSeconds=900}}}'
 readonly FLEET_ORG="gke-demos"
 readonly FLEET_REPO_NAME="kcna26-fleet-gitops-staging"
 readonly GITHUB_APP_ID="5579804"
@@ -94,6 +97,15 @@ set_once ENABLE_DRIFT_DETECTOR false
 set_once MODEL_PROVIDER vertex_ai
 set_once VERTEX_LOCATION "$VERTEX_LOCATION"
 set_once MODEL_DEFAULT_NAME "$MODEL"
+# Single-quoted: install.env is read as shell, and the HCL carries double quotes.
+set_once TF_VAR_extra_helm_values "'$EXTRA_HELM_VALUES'"
+# The exclusions change as other demos add clusters, so this one is rewritten on
+# every run. Passed only as a flag, it was lost on the first upgrade.sh run
+# (2026-11-07), and the agent covered every cluster in the project for a week.
+grep -v "^SCOPE_EXCLUDE_CLUSTERS=" "$install_env" >"$install_env.tmp" || true
+echo "SCOPE_EXCLUDE_CLUSTERS=$exclude_csv" >>"$install_env.tmp"
+mv "$install_env.tmp" "$install_env"
+chmod 600 "$install_env"
 
 pem_args=()
 [[ -f "$CRED_DIR/app.pem" ]] && pem_args=(--github-pem-path="$CRED_DIR/app.pem")

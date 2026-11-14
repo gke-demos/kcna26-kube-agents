@@ -1,40 +1,37 @@
 #!/usr/bin/env bash
-# Demo settings on the PlatformAgent that the installer has no flag for:
+# Check the demo's agent settings on the PlatformAgent:
 #   INCIDENT_TRIAGE_OPEN_PULL_REQUEST=true  the triage opens its recommended fix
 #     as a PR itself (no Slack click); a human still merges. Drift and
 #     controller-stall reports still wait for a reply.
-#   INCIDENT_WORKLOAD_DEDUP_SECONDS         a workload that breaks again while
-#     its fix PR is open gets a reminder, not a new triage.
-# The installer renders spec.deployment.env from install.env, so re-run this
-# after any install-hub.sh run. The operator restarts the agent pod.
+#   INCIDENT_WORKLOAD_DEDUP_SECONDS=900     a workload that breaks again within 15
+#     minutes folds into its open incident (the chart's default is an hour).
 #
-# Usage: tune-agent.sh
+# Since kube-agents 0.26 these are chart values, set by the TF_VAR_extra_helm_values
+# line in install.env (install-hub.sh and install-staging.sh write it), and the
+# chart replaces entries added to the PlatformAgent's env by hand. So this script
+# only checks; to change a setting, edit that line and run scripts/upgrade.sh.
+#
+# Usage: tune-agent.sh   (HUB_CONTEXT selects the install; default kube-agents-hub)
 set -euo pipefail
 
 readonly CONTEXT="${HUB_CONTEXT:-kube-agents-hub}"
 readonly NAMESPACE="kubeagents-system"
 readonly PLATFORM_AGENT="platform-agent"
-readonly AGENT_DEPLOYMENT="platform-agent-gateway"
-readonly DEDUP_SECONDS="900"
-readonly ROLLOUT_TIMEOUT="900s"
-declare -A SETTINGS=(
+declare -A WANT=(
   [INCIDENT_TRIAGE_OPEN_PULL_REQUEST]="true"
-  [INCIDENT_WORKLOAD_DEDUP_SECONDS]="$DEDUP_SECONDS"
+  [INCIDENT_WORKLOAD_DEDUP_SECONDS]="900"
 )
 
-current="$(kubectl --context "$CONTEXT" -n "$NAMESPACE" get platformagent "$PLATFORM_AGENT" \
+env_json="$(kubectl --context "$CONTEXT" -n "$NAMESPACE" get platformagent "$PLATFORM_AGENT" \
   -o json | jq -c '.spec.deployment.env // []')"
-next="$current"
-for name in "${!SETTINGS[@]}"; do
-  next="$(jq -c --arg n "$name" --arg v "${SETTINGS[$name]}" \
-    'map(select(.name != $n)) + [{name: $n, value: $v}]' <<<"$next")"
+bad=0
+for name in "${!WANT[@]}"; do
+  have="$(jq -r --arg n "$name" '.[] | select(.name == $n) | .value' <<<"$env_json")"
+  if [[ "$have" == "${WANT[$name]}" ]]; then
+    echo "ok    $name=$have"
+  else
+    echo "FAIL  $name=${have:-<unset>} (want ${WANT[$name]}): set it in TF_VAR_extra_helm_values and run scripts/upgrade.sh"
+    bad=1
+  fi
 done
-if [[ "$(jq -S . <<<"$current")" == "$(jq -S . <<<"$next")" ]]; then
-  echo "already set"
-  exit 0
-fi
-kubectl --context "$CONTEXT" -n "$NAMESPACE" patch platformagent "$PLATFORM_AGENT" --type merge \
-  -p "$(jq -c '{spec: {deployment: {env: .}}}' <<<"$next")"
-echo "waiting for the operator to roll the agent pod..."
-sleep 5
-kubectl --context "$CONTEXT" -n "$NAMESPACE" rollout status deploy/"$AGENT_DEPLOYMENT" --timeout="$ROLLOUT_TIMEOUT"
+exit "$bad"

@@ -26,6 +26,7 @@ readonly SLACK_HOME_CHANNEL="C0CEZ07K39N"
 # Comma-separated Slack member IDs. Must match SLACK_ALLOWED_USERS in install.env.
 readonly SLACK_ALLOWED_USERS="U0CDYBNMHV1"
 readonly ALERT_CEILING=500
+readonly EXTRA_HELM_VALUES='{platformAgent={deployment={env=[{name="INCIDENT_TRIAGE_OPEN_PULL_REQUEST",value="true"}],incidentWorkloadDedupSeconds=900}}}'
 
 installer="$CRED_DIR/install-$RELEASE.sh"
 [[ -f "$installer" ]] || {
@@ -48,6 +49,10 @@ done
 grep -q "^MODEL_PROVIDER=" "$install_env" || echo "MODEL_PROVIDER=vertex_ai" >>"$install_env"
 grep -q "^VERTEX_LOCATION=" "$install_env" || echo "VERTEX_LOCATION=$VERTEX_LOCATION" >>"$install_env"
 grep -q "^MODEL_DEFAULT_NAME=" "$install_env" || echo "MODEL_DEFAULT_NAME=$MODEL" >>"$install_env"
+# The triage opens its recommended fix as a PR itself (a human still merges), and a
+# workload that breaks again within 15 minutes folds into its open incident. Chart
+# values since 0.26, which replaces entries added to the PlatformAgent's env by hand.
+grep -q "^TF_VAR_extra_helm_values=" "$install_env" || echo "TF_VAR_extra_helm_values='$EXTRA_HELM_VALUES'" >>"$install_env"
 
 pem_args=()
 [[ -f "$CRED_DIR/app.pem" ]] && pem_args=(--github-pem-path="$CRED_DIR/app.pem")
