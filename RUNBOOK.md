@@ -112,20 +112,7 @@ Installed: release `0.23.0` on 2026-11-02; `0.25.0` on 2026-11-07; `0.31.0` on 2
 replicas with an elected leader (0.26 on); the bus stays on one NATS server, because an existing
 bus cannot change its server count.
 
-**Upgrading.** Try the release on staging first, then prod, with `scripts/upgrade.sh staging|prod`,
-`--plan` first. The release's `upgrade.sh` re-renders the install from `install.env` alone, so
-every setting lives there: `MODEL_PROVIDER`, `VERTEX_LOCATION`, `MODEL_DEFAULT_NAME`, `SCOPE_PROJECTS`,
-`TF_VAR_extra_helm_values` and, on staging, `SCOPE_EXCLUDE_CLUSTERS` (`scripts/upgrade.sh` refuses
-a file missing one). A missing model provider plans the removal of the Vertex AI gateway's
-identity; missing exclusions let staging adopt every cluster in gke-demos-345619. An upgrade's
-Helm apply and a console deploy each raise drift alerts and drift triage cards: run
-`scripts/archive-drift-cards.sh`, clear the channel, then `scripts/preflight.sh`. `scripts/rehearse.sh
-staging|prod` runs the bad-image incident end to end and prints the timings; `python3 -I
-tools/release_notes.py <versions>` summarises what the releases change for an install.
-
-Scheduled audits slow to weekly after 7 days with no chat message to the agent and stop after 14
-(kube-agents 0.26+); a chat message wakes them, and `hermes cron run` is never held. Before a
-show, re-run them by hand (section 2).
+**Upgrading** (staging first, then prod), with the verification and the whole-demo check: [`UPGRADING.md`](UPGRADING.md). Scheduled audits slow to weekly after 7 days with no chat message to the agent and stop after 14 (kube-agents 0.26+); before a show, re-run them by hand (section 2).
 
 ## 2. Pre-stage the audits
 
