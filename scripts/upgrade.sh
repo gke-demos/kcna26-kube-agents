@@ -11,14 +11,14 @@
 #   gh api -H 'Accept: application/vnd.github.raw' \
 #     'repos/gke-labs/kube-agents/contents/upgrade.sh?ref=<RELEASE>' > ~/.kcna26/upgrade-<RELEASE>.sh
 # upgrade.sh re-renders the install from install.env alone, so everything set by
-# hand must live there: MODEL_PROVIDER, VERTEX_LOCATION, MODEL_DEFAULT_NAME and the
+# hand must live there: MODEL_PROVIDER, VERTEX_LOCATION, MODEL_DEFAULT_NAME, SCOPE_PROJECTS, the
 # TF_VAR_extra_helm_values line (the agent's auto-PR and fold-in settings), and for
 # staging SCOPE_EXCLUDE_CLUSTERS. A staging run whose cluster list may have changed
 # should go through scripts/install-staging.sh, which rewrites the exclusions.
 # Afterwards: archive the drift cards the apply raises, run scripts/preflight.sh.
 set -euo pipefail
 
-readonly DEFAULT_RELEASE="0.31.0"
+readonly DEFAULT_RELEASE="0.33.0"
 readonly RELEASE="${RELEASE:-$DEFAULT_RELEASE}"
 readonly KCNA_DIR="$HOME/.kcna26"
 readonly REGION="us-central1"
@@ -53,7 +53,7 @@ script="$KCNA_DIR/upgrade-$RELEASE.sh"
   exit 1
 }
 install_env="$cred_dir/install.env"
-required=(MODEL_PROVIDER VERTEX_LOCATION MODEL_DEFAULT_NAME TF_VAR_extra_helm_values)
+required=(MODEL_PROVIDER VERTEX_LOCATION MODEL_DEFAULT_NAME TF_VAR_extra_helm_values SCOPE_PROJECTS)
 # Staging shares its project with other demos' clusters; without the exclusions
 # the agent adopts every one of them (it did, 2026-11-07 to 11-14).
 [[ "$target" == staging ]] && required+=(SCOPE_EXCLUDE_CLUSTERS)

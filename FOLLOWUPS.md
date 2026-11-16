@@ -58,6 +58,13 @@ Friday are for re-runs and recording. Strike items through as they close.
       PlatformAgent env. Staging rehearsal: bad image → PR in 2:03, healthy in 3:12. The console
       reads 0.31's new first card post. The compute demo cluster (`autoscale-arcade`) joined
       kcna-2026-demos and has a Cluster Agent.
+- [x] ~~kube-agents 0.33.0~~ on 2026-11-16, staging then prod. Rehearsals: staging PR in 2:23 and
+      healthy in 3:02; prod 3:47 and 4:11 (its board was busy with drift and `autoscale-arcade`
+      triages). Both installs now name their own project in `spec.scope.projects` (0.28 flags an
+      implied scope).
+- [ ] Prod watches the compute demo cluster `autoscale-arcade` and triages its failures into
+      `#platform-ops` (it refuses the PRs: the fleet repo does not declare that cluster). Exclude it
+      if the noise matters.
 - [x] ~~Staging's scope~~: `install-staging.sh` passed its cluster exclusions as a flag only, so the
       first `upgrade.sh` run (2026-11-07) dropped them and staging covered all 20 clusters in
       gke-demos-345619 until 2026-11-14 (about 140 triages, mostly `ap-iap-testing`; no PRs: the

@@ -33,7 +33,7 @@
 #   slack-app-token and install-<release>.sh (the release's own install.sh).
 set -euo pipefail
 
-readonly RELEASE="0.31.0"
+readonly RELEASE="0.33.0"
 readonly PROJECT="gke-demos-345619"
 readonly CRED_DIR="${CRED_DIR:-$HOME/.kcna26/staging}"
 readonly HUB_CLUSTER="kube-agents-stg"
@@ -97,6 +97,8 @@ set_once ENABLE_DRIFT_DETECTOR false
 set_once MODEL_PROVIDER vertex_ai
 set_once VERTEX_LOCATION "$VERTEX_LOCATION"
 set_once MODEL_DEFAULT_NAME "$MODEL"
+# Declared, not implied (0.28's ScopeUndeclared); the exclusions below still apply.
+set_once SCOPE_PROJECTS "$PROJECT"
 # Single-quoted: install.env is read as shell, and the HCL carries double quotes.
 set_once TF_VAR_extra_helm_values "'$EXTRA_HELM_VALUES'"
 # The exclusions change as other demos add clusters, so this one is rewritten on

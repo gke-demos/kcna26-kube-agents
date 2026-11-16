@@ -57,7 +57,7 @@ if [[ -z "$newest_audit" ]]; then
 else
   age_hours=$((($(date +%s) - $(date -d "$newest_audit" +%s)) / SECONDS_PER_HOUR))
   ((age_hours <= AUDIT_MAX_AGE_HOURS)) && ok "newest audit issue updated ${age_hours}h ago" ||
-    bad "newest audit issue is ${age_hours}h old: re-run the audits"
+    bad "newest audit issue is ${age_hours}h old: re-run the audits (kube-agents 0.26+ slows scheduled audits to weekly after 7 days with no chat message, and stops them after 14; hermes cron run is never held)"
 fi
 
 for cluster in "${!APP_NAMESPACE[@]}"; do

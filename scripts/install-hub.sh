@@ -8,7 +8,7 @@
 #   slack-app-token and install-<release>.sh (the release's own install.sh).
 set -euo pipefail
 
-readonly RELEASE="0.31.0"
+readonly RELEASE="0.33.0"
 readonly PROJECT="${PROJECT:-kcna-2026-demos}"
 readonly CRED_DIR="${CRED_DIR:-$HOME/.kcna26}"
 readonly HUB_CLUSTER="kube-agents-hub"
@@ -49,6 +49,9 @@ done
 grep -q "^MODEL_PROVIDER=" "$install_env" || echo "MODEL_PROVIDER=vertex_ai" >>"$install_env"
 grep -q "^VERTEX_LOCATION=" "$install_env" || echo "VERTEX_LOCATION=$VERTEX_LOCATION" >>"$install_env"
 grep -q "^MODEL_DEFAULT_NAME=" "$install_env" || echo "MODEL_DEFAULT_NAME=$MODEL" >>"$install_env"
+# Declared, not implied: 0.28 sets ScopeUndeclared on an install that adopts its
+# project's clusters without naming the project. The coverage is the same.
+grep -q "^SCOPE_PROJECTS=" "$install_env" || echo "SCOPE_PROJECTS=$PROJECT" >>"$install_env"
 # The triage opens its recommended fix as a PR itself (a human still merges), and a
 # workload that breaks again within 15 minutes folds into its open incident. Chart
 # values since 0.26, which replaces entries added to the PlatformAgent's env by hand.
