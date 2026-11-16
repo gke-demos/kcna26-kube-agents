@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Live incident: a "memory tuning" commit squeezes one service below what it
 # needs, Config Sync applies it, the new pods are OOMKilled on start, and the
-# kube-agents event watcher raises the alert within seconds.
+# kube-agents event watcher raises the alert after its crash-loop debounce
+# (three restarts and a 2-minute settle: about 6 minutes after the push).
 #
 # Usage: trigger-oom.sh [recommendationservice|emailservice|currencyservice|userservice|contacts]
 # Default: recommendationservice (the talk's scenario).

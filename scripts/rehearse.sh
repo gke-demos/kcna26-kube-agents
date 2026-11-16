@@ -24,13 +24,24 @@ readonly CONSOLE_HEADER="X-Fleet-Scope: 1"
 target_env="${1:-}"
 target="${2:-$DEFAULT_TARGET}"
 case "$target_env" in
-  staging) repo="gke-demos/kcna26-fleet-gitops-staging" cluster="boutique-stg" ;;
-  prod) repo="gke-demos/kcna26-fleet-gitops" cluster="boutique-prod" ;;
+  staging) repo="gke-demos/kcna26-fleet-gitops-staging" cluster="boutique-stg" hub="$STAGING_HUB" ;;
+  prod) repo="gke-demos/kcna26-fleet-gitops" cluster="boutique-prod" hub="kube-agents-hub" ;;
   *)
     sed -n '2,10p' "$0"
     exit 2
     ;;
 esac
+# The agent's fix for this incident: its incident branch for this workload, touching
+# only the workload's manifest. Anything else opened meanwhile is left alone.
+readonly BRANCH_PREFIX="platform-agent/incident-$cluster-"
+readonly MANIFEST="clusters/$cluster/namespaces/$NAMESPACE/$target.yaml"
+
+# Booth mode merges the agent's PR by itself, which races this script's merge.
+if kubectl --context "$hub" -n fleet-scope get deploy fleet-scope \
+  -o jsonpath='{.spec.template.spec.containers[0].env[*].name}' 2>/dev/null | grep -qw SCOPE_AUTO_MERGE; then
+  echo "refusing: booth mode is on for $target_env's console (scripts/console.sh booth off, with HUB_CONTEXT=$hub for staging)" >&2
+  exit 1
+fi
 
 now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 secs() { date -u -d "$1" +%s; }
@@ -57,15 +68,22 @@ pr=""
 deadline=$(($(date +%s) + PR_TIMEOUT_SECONDS))
 while [[ -z "$pr" && $(date +%s) -lt $deadline ]]; do
   sleep "$PR_POLL_SECONDS"
-  pr="$(gh pr list -R "$repo" --state all --limit 5 --json number,createdAt \
-    --template '{{range .}}{{.createdAt}} {{.number}}{{"\n"}}{{end}}' | awk -v s="$pressed" '$1 >= s {print; exit}')"
+  pr="$(gh pr list -R "$repo" --state open --limit 20 --json number,createdAt,headRefName \
+    --template '{{range .}}{{.createdAt}} {{.number}} {{.headRefName}}{{"\n"}}{{end}}' |
+    awk -v s="$pressed" -v p="$BRANCH_PREFIX" -v w="-$target-" \
+      '$1 >= s && index($3, p) == 1 && index($3, w) > 0 {print $1, $2; exit}')"
 done
 [[ -n "$pr" ]] || {
-  echo "no fix PR on $repo within $PR_TIMEOUT_SECONDS s: check the channel and the board" >&2
+  echo "no fix PR for $target on $repo within $PR_TIMEOUT_SECONDS s: check the channel and the board" >&2
   exit 1
 }
 pr_at="${pr%% *}" number="${pr##* }"
 echo "PR #$number opened $pr_at ($(($(secs "$pr_at") - $(secs "$pressed"))) s after the press):"
+files="$(gh pr view "$number" -R "$repo" --json files --template '{{range .files}}{{.path}}{{"\n"}}{{end}}')"
+[[ "$files" == "$MANIFEST" ]] || {
+  echo "refusing to merge PR #$number: it touches [$(paste -sd' ' <<<"$files")], not only $MANIFEST; review it by hand" >&2
+  exit 1
+}
 gh pr diff "$number" -R "$repo" | grep -E '^[+-] ' || true
 gh pr merge "$number" -R "$repo" --merge
 merged="$(now)"

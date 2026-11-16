@@ -62,6 +62,7 @@ case "${1:-}" in
     gcloud auth configure-docker "$REGISTRY_HOST" --quiet >/dev/null
     docker buildx build --platform "$PLATFORM" -t "$IMAGE_REPO:$tag" --push "$CONSOLE_DIR"
     echo "$IMAGE_REPO:$tag"
+    echo "tag: $tag   (console.sh deploy takes this)"
     ;;
   deploy)
     shift

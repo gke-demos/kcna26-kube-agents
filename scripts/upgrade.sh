@@ -1,55 +1,65 @@
 #!/usr/bin/env bash
-# Run a kube-agents release's upgrade.sh (full mode) against the KubeCon install or
-# the staging install. Plan first, then apply:
+# Run a kube-agents release's upgrade.sh (full mode) against the staging install or
+# the KubeCon install. UPGRADING.md is the procedure; plan first, then apply:
 #
-#   scripts/upgrade.sh staging --plan     # exit 2 means changes; read them
-#   scripts/upgrade.sh staging
-#   scripts/upgrade.sh prod --plan
-#   scripts/upgrade.sh prod
+#   scripts/upgrade.sh staging 0.33.0 --plan   # exit 2: changes to read; 1: the plan failed
+#   scripts/upgrade.sh staging 0.33.0
+#   scripts/upgrade.sh prod 0.33.0 --plan
+#   scripts/upgrade.sh prod 0.33.0
 #
-# RELEASE (default below) picks $CRED_DIR/upgrade-<RELEASE>.sh, fetched with:
+# The release is required: the script runs ~/.kcna26/upgrade-<RELEASE>.sh, fetched with
 #   gh api -H 'Accept: application/vnd.github.raw' \
 #     'repos/gke-labs/kube-agents/contents/upgrade.sh?ref=<RELEASE>' > ~/.kcna26/upgrade-<RELEASE>.sh
-# upgrade.sh re-renders the install from install.env alone, so everything set by
-# hand must live there: MODEL_PROVIDER, VERTEX_LOCATION, MODEL_DEFAULT_NAME, SCOPE_PROJECTS, the
-# TF_VAR_extra_helm_values line (the agent's auto-PR and fold-in settings), and for
-# staging SCOPE_EXCLUDE_CLUSTERS. A staging run whose cluster list may have changed
-# should go through scripts/install-staging.sh, which rewrites the exclusions.
-# Afterwards: archive the drift cards the apply raises, run scripts/preflight.sh.
+# That engine re-renders the install from install.env alone, in a temporary clone of
+# its release (the state backend comes from the project and cluster below, so read
+# the plan's "state backend" line). Everything set by hand must live in install.env:
+# MODEL_PROVIDER, VERTEX_LOCATION, MODEL_DEFAULT_NAME, SCOPE_PROJECTS,
+# TF_VAR_extra_helm_values and, for staging, SCOPE_EXCLUDE_CLUSTERS, which must name
+# every cluster in its project but staging's own (scripts/refresh-staging-scope.sh).
 set -euo pipefail
 
-readonly DEFAULT_RELEASE="0.33.0"
-readonly RELEASE="${RELEASE:-$DEFAULT_RELEASE}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
 readonly KCNA_DIR="$HOME/.kcna26"
 readonly REGION="us-central1"
-readonly TF_DIR="kube-agents/terraform/examples/full-install"
+# Both installs are administered by this account; prod also uses its own gcloud config.
+readonly ACCOUNT="${KCNA_ACCOUNT:-garisingh@gke.ninja}"
+readonly PROD_GCLOUD_CONFIG="kcna26"
+readonly RELEASE_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
 
 target="${1:-}"
-shift || true
+release="${2:-}"
 case "$target" in
   prod)
     project="kcna-2026-demos"
     cluster="kube-agents-hub"
     cred_dir="$KCNA_DIR"
-    work_dir="$HOME"
-    gcloud_config="${CLOUDSDK_ACTIVE_CONFIG_NAME:-kcna26}"
+    gcloud_config="$PROD_GCLOUD_CONFIG"
     ;;
   staging)
     project="gke-demos-345619"
     cluster="kube-agents-stg"
     cred_dir="$KCNA_DIR/staging"
-    work_dir="$HOME/kcna26-staging"
-    gcloud_config="${CLOUDSDK_ACTIVE_CONFIG_NAME:-}"
+    gcloud_config=""
     ;;
   *)
-    sed -n '2,17p' "$0"
+    sed -n '2,18p' "$0"
     exit 2
     ;;
 esac
+[[ "$release" =~ $RELEASE_RE ]] || {
+  echo "usage: upgrade.sh staging|prod <RELEASE, e.g. 0.33.0> [--plan]" >&2
+  exit 2
+}
+shift 2
 
-script="$KCNA_DIR/upgrade-$RELEASE.sh"
+script="$KCNA_DIR/upgrade-$release.sh"
 [[ -f "$script" ]] || {
-  echo "missing $script (see the fetch command at the top of this script)" >&2
+  echo "missing $script (fetch it: see the top of this script)" >&2
+  exit 1
+}
+grep -q "^BAKED_RELEASE_VERSION=\"$release\"" "$script" || {
+  echo "refusing: $script is not release $release" >&2
   exit 1
 }
 install_env="$cred_dir/install.env"
@@ -63,16 +73,15 @@ for key in "${required[@]}"; do
     exit 1
   }
 done
-# A checkout's backend_override.tf names one install's state; never run against
-# another install's.
-override="$work_dir/$TF_DIR/backend_override.tf"
-if [[ -f "$override" ]] && ! grep -q "\"kube-agents/$cluster\"" "$override"; then
-  echo "refusing: $override names another install's state" >&2
-  exit 1
+if [[ "$target" == staging ]]; then
+  "$SCRIPT_DIR/refresh-staging-scope.sh" --check || {
+    echo "refusing: staging's exclusions are out of date; run scripts/refresh-staging-scope.sh" >&2
+    exit 1
+  }
 fi
 
-cd "$work_dir"
 env ${gcloud_config:+CLOUDSDK_ACTIVE_CONFIG_NAME="$gcloud_config"} \
+  CLOUDSDK_CORE_ACCOUNT="$ACCOUNT" \
   GOOGLE_CLOUD_QUOTA_PROJECT="$project" \
   KUBE_AGENTS_INSTALL_ENV="$install_env" \
   bash "$script" \

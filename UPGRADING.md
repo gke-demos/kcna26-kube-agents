@@ -4,180 +4,199 @@ How to move the demo's two kube-agents installs to a new release and prove they 
 so an agent can follow it without other context: every step has the command, what to expect, and
 when to stop. Always staging first, then prod.
 
-**Stop and ask the person you work for** before step 4 (prod), and whenever a step says STOP. Do
-not work around a refusal from a script here: each one guards against something that went wrong
-before (see "What has gone wrong before").
+**Stop and ask the person you work for** before step 4 (prod), and wherever a step says STOP. Do not
+work around a refusal from a script here: each one guards against something that went wrong before
+(see "What has gone wrong before").
+
+**How to run the commands.** Run everything from the root of this repository. Each command block
+stands alone: shell variables do not carry from one block to the next, so where a block shows
+`<RELEASE>`, write the release (for example `0.34.0`) into the command itself. Never pipe
+`scripts/upgrade.sh` into another command: its exit code is the result, and a pipe hides it.
 
 ## The two installs
 
-|                               | Staging                                                          | Prod (the KubeCon demo)                                                                  |
-| ----------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| GCP project                   | `gke-demos-345619` (shared with other demos)                     | `kcna-2026-demos`                                                                        |
-| Hub cluster / kubectl context | `kube-agents-stg` (us-central1)                                  | `kube-agents-hub` (us-central1)                                                          |
-| Workload clusters / contexts  | `boutique-stg` (us-central1-b)                                   | `boutique-prod`, `bank-prod` (us-central1-b); `autoscale-arcade` belongs to another demo |
-| Fleet (GitOps) repo           | `gke-demos/kcna26-fleet-gitops-staging`                          | `gke-demos/kcna26-fleet-gitops`                                                          |
-| Slack channel                 | `#platform-ops-staging` (C0CFAPAV3HD), app `kube-agents-staging` | `#platform-ops` (C0CEZ07K39N), app `kube-agents`                                         |
-| Credentials and `install.env` | `~/.kcna26/staging/`                                             | `~/.kcna26/`                                                                             |
-| Installer checkout            | `~/kcna26-staging/kube-agents`                                   | `~/kube-agents`                                                                          |
-| Console (fleet-scope)         | port-forward only (`--dev`)                                      | https://kcna26.demo.gke.ninja behind IAP                                                 |
+|                                  | Staging                                                          | Prod (the KubeCon demo)                                                                              |
+| -------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| GCP project                      | `gke-demos-345619` (shared with other demos)                     | `kcna-2026-demos`                                                                                    |
+| Hub cluster / kubectl context    | `kube-agents-stg` (us-central1)                                  | `kube-agents-hub` (us-central1)                                                                      |
+| Workload clusters / contexts     | `boutique-stg` (us-central1-b)                                   | `boutique-prod`, `bank-prod` (us-central1-b)                                                         |
+| Other clusters the agent watches | none: every other cluster in the project is excluded             | `autoscale-arcade`, another demo's cluster, watched on purpose (read-only; never an incident target) |
+| Fleet (GitOps) repo              | `gke-demos/kcna26-fleet-gitops-staging`                          | `gke-demos/kcna26-fleet-gitops`                                                                      |
+| Slack channel                    | `#platform-ops-staging` (C0CFAPAV3HD), app `kube-agents-staging` | `#platform-ops` (C0CEZ07K39N), app `kube-agents`                                                     |
+| Credentials and `install.env`    | `~/.kcna26/staging/`                                             | `~/.kcna26/`                                                                                         |
+| gcloud                           | account `garisingh@gke.ninja` (`scripts/upgrade.sh` pins it)     | the same account, gcloud configuration `kcna26`                                                      |
+| Console (fleet-scope)            | port-forward only (`--dev`)                                      | https://kcna26.demo.gke.ninja behind IAP                                                             |
 
-Both run `spec.mode: next`, Gemini 3.8 Flash on Vertex AI, and one NATS bus server. The current
-release is in `scripts/upgrade.sh` (`DEFAULT_RELEASE`) and the RUNBOOK's "Installed:" line.
+Both run `spec.mode: next`, Gemini 3.8 Flash on Vertex AI, and one NATS bus server. The release they
+run is the RUNBOOK's "Installed:" line and `RELEASE=` in `scripts/install-hub.sh`.
 
 ## 0. Prerequisites
 
-Run from the root of this repository. Check each line before going on:
+Check each line before going on:
 
 ```bash
-gcloud auth list --filter=status:ACTIVE --format='value(account)'   # garisingh@gke.ninja
-gcloud config configurations list --format='value(name)' | grep -x kcna26   # prod's config
-gh auth status                       # write access to the two fleet repos (PRs are merged)
+gcloud auth list --format='value(account)' | grep -x garisingh@gke.ninja
+gcloud config configurations list --format='value(name)' | grep -x kcna26
+gcloud projects describe gke-demos-345619 --account=garisingh@gke.ninja --format='value(projectId)'
+gh auth status          # needs write access to the two fleet repos: the rehearsal merges PRs
 for f in install.env slack-bot-token github-pat; do test -s ~/.kcna26/$f && echo "prod $f ok"; done
 for f in install.env slack-bot-token github-pat; do test -s ~/.kcna26/staging/$f && echo "staging $f ok"; done
 kubectl config get-contexts -o name | grep -E '^(kube-agents-hub|boutique-prod|bank-prod|kube-agents-stg|boutique-stg)$'
 command -v terraform jq node docker >/dev/null && echo tools ok
 ```
 
-Missing contexts: `scripts/contexts.sh kcna-2026-demos` creates prod's. Staging's:
+Missing contexts: `scripts/contexts.sh kcna-2026-demos` creates prod's three. Staging's two:
 
 ```bash
-for c in "kube-agents-stg --region us-central1" "boutique-stg --zone us-central1-b"; do
-  set -- $c
-  gcloud container clusters get-credentials "$1" "$2" "$3" --project gke-demos-345619
-  kubectl config rename-context "gke_gke-demos-345619_$3_$1" "$1"
-done
+gcloud container clusters get-credentials kube-agents-stg --region us-central1 --project gke-demos-345619
+kubectl config rename-context gke_gke-demos-345619_us-central1_kube-agents-stg kube-agents-stg
+gcloud container clusters get-credentials boutique-stg --zone us-central1-b --project gke-demos-345619
+kubectl config rename-context gke_gke-demos-345619_us-central1-b_boutique-stg boutique-stg
 ```
 
-Then confirm both installs are healthy on the release they run now, before changing anything:
+Then confirm both installs are healthy on the release they run now (from the RUNBOOK's
+"Installed:" line), before changing anything:
 
 ```bash
 scripts/verify-install.sh staging <CURRENT>
 scripts/verify-install.sh prod <CURRENT>
 ```
 
-STOP if either fails: fix that first; an upgrade on top of a broken install hides the cause.
+Pass: exit 0. Every check line reads `ok`; `note` lines are information (`bus servers: 1` always
+appears). STOP if either exits non-zero: fix that first, because an upgrade on top of a broken
+install hides the cause.
 
 ## 1. Review the release
 
 ```bash
 gh release list -R gke-labs/kube-agents --limit 8
-python3 -I tools/release_notes.py <each release after CURRENT, up to TARGET>
+python3 -I tools/release_notes.py <each release after CURRENT, up to TARGET, e.g. 0.34.0 0.35.0>
 ```
 
 The script prints the entries an install can see, the entries marked breaking, and the upgrade
 page's breaking-change rows for those releases. Read all of it, then:
 
 - **Every upgrade-page row**: does it apply to a `next` install on GKE Autopilot with Slack? A row
-  that names a setting this demo sets (agent env, scope, bus, model, Slack) needs action before
-  the upgrade. Example: 0.26 replaced hand-added PlatformAgent env, so the agent's settings moved
-  to chart values first.
+  that names something this demo sets (agent env, scope, bus, model, Slack) needs action before the
+  upgrade. Example: 0.26 replaced hand-added PlatformAgent env, so the agent's settings moved to
+  chart values first.
 - **Entries touching** the Slack messages (`gateway`, `slack`, `chat`, `a2a`), incidents
   (`incident-triage`, `event-watcher`, `kanban`), audits (`fleet-audit`), fix PRs (`platform`,
-  `submit-suggestion`, `gitops`), the installer or the chart: open the PR (`gh pr view <n> -R
-gke-labs/kube-agents`) when the title leaves the effect on this demo unclear.
+  `submit-suggestion`, `gitops`), the installer or the chart: read the PR
+  (`gh pr view <n> -R gke-labs/kube-agents`) when its title leaves the effect on this demo unclear.
 
-Write down what you expect to change for this demo. STOP and ask if a change needs a decision
-(a new default worth overriding, a setting to add) rather than a check.
+Write down what you expect to change for this demo. STOP and ask if a change needs a decision (a
+new default worth overriding, a setting to add) rather than a check.
 
 ## 2. Prepare
 
+Fetch the release's scripts. `upgrade-<RELEASE>.sh` is what `scripts/upgrade.sh` runs;
+`install-<RELEASE>.sh` is kept for a later re-install with `scripts/install-hub.sh` or
+`scripts/install-staging.sh`, which pin the release.
+
 ```bash
-TARGET=<release, e.g. 0.33.0>
 gh api -H 'Accept: application/vnd.github.raw' \
-  "repos/gke-labs/kube-agents/contents/upgrade.sh?ref=$TARGET" > ~/.kcna26/upgrade-$TARGET.sh
+  'repos/gke-labs/kube-agents/contents/upgrade.sh?ref=<RELEASE>' > ~/.kcna26/upgrade-<RELEASE>.sh
 gh api -H 'Accept: application/vnd.github.raw' \
-  "repos/gke-labs/kube-agents/contents/install.sh?ref=$TARGET" > ~/.kcna26/install-$TARGET.sh
-cp ~/.kcna26/install-$TARGET.sh ~/.kcna26/staging/
+  'repos/gke-labs/kube-agents/contents/install.sh?ref=<RELEASE>' > ~/.kcna26/install-<RELEASE>.sh
+cp ~/.kcna26/install-<RELEASE>.sh ~/.kcna26/staging/
 chmod 600 ~/.kcna26/*.sh ~/.kcna26/staging/*.sh
-grep -m1 '^BAKED_RELEASE_VERSION=' ~/.kcna26/upgrade-$TARGET.sh    # must print $TARGET
-mkdir -p ~/.kcna26/backup-$TARGET
-kubectl --context kube-agents-hub -n kubeagents-system get platformagent platform-agent -o yaml \
-  > ~/.kcna26/backup-$TARGET/prod-platformagent.yaml
-kubectl --context kube-agents-stg -n kubeagents-system get platformagent platform-agent -o yaml \
-  > ~/.kcna26/backup-$TARGET/staging-platformagent.yaml
-cp ~/.kcna26/install.env ~/.kcna26/backup-$TARGET/prod-install.env
-cp ~/.kcna26/staging/install.env ~/.kcna26/backup-$TARGET/staging-install.env
-chmod -R go-rwx ~/.kcna26/backup-$TARGET
+grep -m1 '^BAKED_RELEASE_VERSION=' ~/.kcna26/upgrade-<RELEASE>.sh     # must print the release
+```
+
+Back up both installs' PlatformAgent and `install.env`:
+
+```bash
+b=~/.kcna26/backup-<RELEASE>; mkdir -p "$b"
+kubectl --context kube-agents-hub -n kubeagents-system get platformagent platform-agent -o yaml > "$b/prod-platformagent.yaml"
+kubectl --context kube-agents-stg -n kubeagents-system get platformagent platform-agent -o yaml > "$b/staging-platformagent.yaml"
+cp ~/.kcna26/install.env "$b/prod-install.env"; cp ~/.kcna26/staging/install.env "$b/staging-install.env"
+chmod -R go-rwx "$b"; ls "$b"
 ```
 
 ## 3. Staging
 
-**3a. Refresh staging's cluster exclusions.** Staging shares its project with other demos'
-clusters, and excludes every cluster but its own two. If another demo added a cluster since the
-last run, the upgrade would let staging adopt it:
+**3a. Refresh staging's cluster exclusions.** Staging shares its project with other demos' clusters
+and excludes every one but its own two. A cluster added since the last run would be adopted by the
+upgrade:
 
 ```bash
-gcloud container clusters list --project gke-demos-345619 --format='value(name)' | sort > /tmp/now
-grep '^SCOPE_EXCLUDE_CLUSTERS=' ~/.kcna26/staging/install.env | cut -d= -f2 | tr ',' '\n' \
-  | awk -F/ '{print $3}' | sort > /tmp/excluded
-comm -23 /tmp/now /tmp/excluded      # must print exactly: boutique-stg, kube-agents-stg
+scripts/refresh-staging-scope.sh
 ```
 
-If it prints anything else, rewrite the list: delete the `SCOPE_EXCLUDE_CLUSTERS=` line from
-`~/.kcna26/staging/install.env` and add the new one in the same `project/location/cluster,…`
-form (`scripts/install-staging.sh` builds it the same way), then re-run the check.
+It prints `ok` when the list is current, or rewrites the `SCOPE_EXCLUDE_CLUSTERS` line in
+`~/.kcna26/staging/install.env` and says what changed. `scripts/upgrade.sh staging` refuses to run
+while the list is out of date.
 
 **3b. Plan.**
 
 ```bash
-RELEASE=$TARGET scripts/upgrade.sh staging --plan 2>&1 | tee /tmp/stg-plan.log | tail -5
-sed 's/\x1b\[[0-9;]*m//g' /tmp/stg-plan.log | grep -E 'Target Image|GKE Target|state backend|Plan:|will be|must be'
+scripts/upgrade.sh staging <RELEASE> --plan > /tmp/stg-plan.log 2>&1; echo "exit $?"
+sed 's/\x1b\[[0-9;]*m//g' /tmp/stg-plan.log | grep -E 'refusing|Target Image|GKE Target|state backend|Plan:|will be|must be'
 ```
 
-Exit code 2 means there are changes (normal); 1 means the plan failed. Read it as "Reading the plan"
-below says. The backend must be `gs://gke-demos-345619-kube-agents-tfstate/kube-agents/kube-agents-stg`.
+`exit 2` means the plan has changes (normal); `exit 0` means nothing would change; `exit 1` means it
+failed or refused: read the end of `/tmp/stg-plan.log`. Check the lines against "Reading the plan"
+below. The `Target Image Tag` must be the release, and the state backend must be
+`gs://gke-demos-345619-kube-agents-tfstate/kube-agents/kube-agents-stg`. STOP on a destroy, a
+replacement, or anything in another project.
 
 **3c. Apply.**
 
 ```bash
-RELEASE=$TARGET scripts/upgrade.sh staging 2>&1 | tee /tmp/stg-apply.log | tail -8
+scripts/upgrade.sh staging <RELEASE> > /tmp/stg-apply.log 2>&1; echo "exit $?"
+sed 's/\x1b\[[0-9;]*m//g' /tmp/stg-apply.log | grep -E 'refusing|Plan:|Apply complete|Upgrade Complete|Error|✗'
 ```
 
-Expect `Apply complete!` with the same counts as the plan, and `Upgrade Complete!`. The chat setup
-checklist it prints afterwards is the installer's generic reminder; nothing in it is new.
+Pass: `exit 0`, `Apply complete!` with the same counts as the plan, and `Upgrade Complete!`. The chat
+setup checklist printed after it is the installer's generic reminder; nothing in it is new. STOP on
+any other result.
 
 **3d. Verify.**
 
 ```bash
 scripts/archive-drift-cards.sh kube-agents-stg
-scripts/verify-install.sh staging $TARGET
+scripts/verify-install.sh staging <RELEASE>
 ```
 
-Every line must be `ok`. A `note` names an advisory condition: read its message
-(`kubectl --context kube-agents-stg -n kubeagents-system get platformagent platform-agent -o yaml`)
-and decide whether it needs an `install.env` setting, as `ScopeUndeclared` did (`SCOPE_PROJECTS`).
-`Ready=False` right after an apply is the rollout; re-run a minute later.
+Pass: `verify-install.sh` exits 0. A `note` naming a condition is advisory: read its message
+(`kubectl --context kube-agents-stg -n kubeagents-system get platformagent platform-agent -o yaml`,
+under `status.conditions`) and STOP to ask whether it needs an `install.env` setting, as 0.28's
+`ScopeUndeclared` did (`SCOPE_PROJECTS`). `Ready=False` right after an apply is the rollout: re-run a
+minute later. A profile mismatch right after a scope change clears at the agent's hourly reconcile.
 
 **3e. Rehearse an incident.**
 
 ```bash
-scripts/rehearse.sh staging frontend      # or checkoutservice, productcatalogservice
+scripts/rehearse.sh staging frontend > /tmp/stg-rehearse.log 2>&1; echo "exit $?"; cat /tmp/stg-rehearse.log
 ```
 
-It presses the console's "Roll out a missing image tag" button, waits for the agent's fix PR,
-prints its diff, merges it, waits for the rollout, prints the timings, then the events the console
-recorded. Pass: a one-line image revert, healthy within about 5 minutes of the press, and console
-events in this order, every one keyed `boutique-stg/<workload>`: `action`, `alert`, `triage` notes,
-`triage_report`, `pr_opened`, `pr_merged`. Use a workload that has not broken in the last 15
-minutes, or the alert folds into that incident and no PR opens.
+The workload can also be `checkoutservice` or `productcatalogservice`; pick one that has not broken
+in the last 15 minutes, or the alert folds into that incident and no PR opens. The script presses the
+console's "Roll out a missing image tag" button, waits for the agent's fix PR (only its incident
+branch for that workload, touching only that workload's manifest), prints its diff, merges it, waits
+for the rollout, prints the timings, then the events the console recorded.
 
-STOP if no PR opens: read `#platform-ops-staging` and the board (`kubectl --context kube-agents-stg
--n kubeagents-system exec deploy/platform-agent-gateway -c platform-agent -- env
-HERMES_HOME=/opt/data/profiles/platform hermes kanban list`).
+Pass: `exit 0`; a one-line image revert; healthy within about 5 minutes of the press; console events
+in this order, each keyed `boutique-stg/<workload>`: `action`, `alert`, `triage` notes,
+`triage_report`, `pr_opened`, `pr_merged`.
 
-**3f. If the console's events are wrong** (a missing `triage_report`, notes read as `chat`, events
-without a key), the release changed the bot's Slack messages. Capture the thread
-(`conversations.replies` with the staging bot token in `~/.kcna26/staging/slack-bot-token`), fix
-`console/internal/signals/` with a test built from the real message, run `go test ./...` and
-`node --test web/js/*.test.js` in `console/`, commit, then:
+STOP if it exits non-zero. Read `#platform-ops-staging` and the board:
+`kubectl --context kube-agents-stg -n kubeagents-system exec deploy/platform-agent-gateway -c platform-agent -- env HERMES_HOME=/opt/data/profiles/platform hermes kanban list`.
 
-```bash
-scripts/console.sh build                  # prints the image tag
-HUB_CONTEXT=kube-agents-stg CRED_DIR=~/.kcna26/staging \
-  CONSOLE_MANIFEST=console/deploy/fleet-scope-staging.yaml scripts/console.sh deploy --dev <TAG>
-```
+**3f. If the console's events are wrong** (no `triage_report`, notes read as `chat`, events without a
+key), the release changed the bot's Slack messages. STOP and say so; the fix is code:
 
-and repeat 3e on another workload until it passes.
+1. Capture the thread with the staging bot token (`~/.kcna26/staging/slack-bot-token`;
+   `conversations.history` and `conversations.replies` on C0CFAPAV3HD).
+2. Fix `console/internal/signals/` with a test built from the real message; in `console/`, run
+   `go test ./...` and `node --test web/js/*.test.js`; commit.
+3. Build and deploy to staging. `console.sh build` ends with a `tag: <TAG>` line; pass that tag:
+   ```bash
+   scripts/console.sh build
+   HUB_CONTEXT=kube-agents-stg CRED_DIR=~/.kcna26/staging CONSOLE_MANIFEST=console/deploy/fleet-scope-staging.yaml scripts/console.sh deploy --dev <TAG>
+   ```
+4. Repeat 3e on another workload until it passes.
 
 **3g. Clean up staging.**
 
@@ -188,47 +207,57 @@ scripts/archive-drift-cards.sh kube-agents-stg
 
 ## 4. Prod
 
-STOP: report the staging results (plan counts, verification, rehearsal timings, console changes)
+STOP: report the staging results (plan counts, verification, rehearsal timings, any console change)
 and get a go-ahead for prod.
 
-**4a. Plan, apply, verify** as for staging, with `prod` in place of `staging`:
+**4a. Plan.**
 
 ```bash
-RELEASE=$TARGET scripts/upgrade.sh prod --plan 2>&1 | tee /tmp/prod-plan.log | tail -5
-RELEASE=$TARGET scripts/upgrade.sh prod 2>&1 | tee /tmp/prod-apply.log | tail -8
-scripts/archive-drift-cards.sh kube-agents-hub
-scripts/verify-install.sh prod $TARGET
+scripts/upgrade.sh prod <RELEASE> --plan > /tmp/prod-plan.log 2>&1; echo "exit $?"
+sed 's/\x1b\[[0-9;]*m//g' /tmp/prod-plan.log | grep -E 'refusing|Target Image|GKE Target|state backend|Plan:|will be|must be'
 ```
 
-The backend must be `gs://kcna-2026-demos-kube-agents-tfstate/kube-agents/kube-agents-hub`, and
-the plan should have the same shape as staging's. STOP on anything staging's plan did not have.
+The state backend must be `gs://kcna-2026-demos-kube-agents-tfstate/kube-agents/kube-agents-hub`,
+and the plan should have staging's shape. STOP on a destroy, a replacement, or any change staging's
+plan did not have.
 
-**4b. Console.** If 3f changed the console, deploy the same tag to prod (IAP, not `--dev`):
+**4b. Apply and verify.**
+
+```bash
+scripts/upgrade.sh prod <RELEASE> > /tmp/prod-apply.log 2>&1; echo "exit $?"
+sed 's/\x1b\[[0-9;]*m//g' /tmp/prod-apply.log | grep -E 'refusing|Plan:|Apply complete|Upgrade Complete|Error|✗'
+scripts/archive-drift-cards.sh kube-agents-hub
+scripts/verify-install.sh prod <RELEASE>
+```
+
+Pass as for staging (3c, 3d).
+
+**4c. Console.** Only if 3f changed the console: deploy the same tag to prod (behind IAP, not
+`--dev`), then check the public URL still answers with IAP's sign-in redirect:
 
 ```bash
 scripts/console.sh deploy <TAG>
-curl -s -o /dev/null -w '%{http_code}\n' https://kcna26.demo.gke.ninja/    # 302: IAP sign-in
+curl -s -o /dev/null -w '%{http_code}\n' https://kcna26.demo.gke.ninja/     # 302
 ```
 
-A deploy turns booth mode off; that is intended.
-
-**4c. Rehearse.** Drift triage cards from the apply hold the worker slots an incident needs, so
-sweep again first:
+**4d. Rehearse.** The apply's drift triage cards hold the worker slots an incident needs, so sweep
+them again first. `rehearse.sh` refuses to run while booth mode is on.
 
 ```bash
 scripts/archive-drift-cards.sh kube-agents-hub
-scripts/rehearse.sh prod productcatalogservice   # or frontend, checkoutservice
+scripts/rehearse.sh prod productcatalogservice > /tmp/prod-rehearse.log 2>&1; echo "exit $?"; cat /tmp/prod-rehearse.log
 ```
 
-Pass: a one-line revert merged and the workload healthy within about 6 minutes. (The prod console
-is behind IAP, so the script prints no console events for prod.)
+The workload can also be `frontend` or `checkoutservice`. Pass: `exit 0`, a one-line revert merged,
+the workload healthy within about 6 minutes. The prod console is behind IAP, so no console events
+are printed for prod.
 
-**4d. Clean up prod.**
+**4e. Clean up prod.**
 
 ```bash
-scripts/reset.sh                              # clusters/ back to the baseline tag
-scripts/archive-drift-cards.sh kube-agents-hub   # drift cards keep arriving for a few minutes
-python3 -I tools/clear_channel.py --keep audit   # the bot's posts, except the audit cards
+scripts/reset.sh                                  # clusters/ back to the baseline tag; incident PRs closed
+scripts/archive-drift-cards.sh kube-agents-hub    # drift cards keep arriving for a few minutes
+python3 -I tools/clear_channel.py --keep audit    # the bot's posts in #platform-ops, except the audit cards
 scripts/preflight.sh
 ```
 
@@ -237,21 +266,21 @@ install"); every other line must be `ok`.
 
 ## 5. Record
 
-1. Pin the release: `RELEASE="$TARGET"` in `scripts/install-hub.sh` and `scripts/install-staging.sh`,
-   `DEFAULT_RELEASE="$TARGET"` in `scripts/upgrade.sh`.
-2. RUNBOOK: add `$TARGET` and the date to the "Installed:" line; add anything the release changed
+1. Pin the release: `RELEASE="<RELEASE>"` in `scripts/install-hub.sh` and `scripts/install-staging.sh`.
+2. RUNBOOK: add the release and the date to the "Installed:" line, and anything the release changed
    about running the demo.
-3. FOLLOWUPS: one checked item with the date, the plan counts and both rehearsals' timings, and
-   open items for anything deferred.
-4. Commit (`chore: both installs run kube-agents <TARGET>`) and push to `main`.
+3. FOLLOWUPS: one checked item with the date, the plan counts and both rehearsals' timings, plus open
+   items for anything deferred.
+4. Commit (`chore: both installs run kube-agents <RELEASE>`) and push to `main`.
 
 ## Verifying the whole demo
 
 The rehearsal covers the live incident path. Before a show, or after a release that touched audits
-or chat, also check on prod:
+or chat, also check on prod. STOP and ask before running the audits: each costs model tokens and
+posts a card to `#platform-ops`.
 
-- **Audits**: run the two the talk uses by hand, then confirm each rewrote its existing ledger
-  issue (same number) and kept the open fix PRs:
+- **Audits.** Run the two the talk uses by hand, then confirm each rewrote its existing ledger issue
+  (same number) and kept the open fix PRs. Each takes 10–20 minutes.
   ```bash
   for job in compliance-audit obtainability-audit; do
     kubectl --context kube-agents-hub -n kubeagents-system exec deploy/platform-agent-gateway \
@@ -260,13 +289,22 @@ or chat, also check on prod:
   gh issue list -R gke-demos/kcna26-fleet-gitops --label agent:audit --state open
   gh pr list -R gke-demos/kcna26-fleet-gitops --state open
   ```
-  Each audit takes 10–20 minutes. Check the cards they post in `#platform-ops`.
-- **The other incidents**: `scripts/trigger-oom.sh emailservice` (alerts after about 6 minutes),
-  the console's "Make a service unschedulable" and "Reset the demo" buttons.
-- **Chat**: the RUNBOOK's two talk prompts, sent by a person in `#platform-ops`. The bot token
-  cannot post as a person.
-- **Booth mode**: `scripts/console.sh booth on 60s`, rehearse once and confirm the PR merges by
-  itself, then `scripts/console.sh booth off`.
+- **The other incidents.** `scripts/trigger-oom.sh emailservice` (alerts about 6 minutes after the
+  push), and the console's "Make a service unschedulable" and "Reset the demo" buttons.
+- **Chat.** The RUNBOOK's two talk prompts, typed by a person in `#platform-ops`; the bot token cannot
+  post as a person.
+- **Booth mode.** Not with `rehearse.sh` (it refuses while booth mode is on, and merges PRs itself):
+  ```bash
+  scripts/console.sh booth on 60s
+  scripts/trigger-badimage.sh checkoutservice
+  ```
+  Then watch the fleet repo: the agent's PR should be merged about 60 seconds after it opens, by
+  the console (its merge commit carries `Pressed-by: auto-merge`). Then turn it off and check:
+  ```bash
+  scripts/console.sh booth off
+  kubectl --context kube-agents-hub -n fleet-scope get deploy fleet-scope -o jsonpath='{.spec.template.spec.containers[0].env[*].name}'
+  ```
+  The list must not contain `SCOPE_AUTO_MERGE`. Finish with `scripts/reset.sh`.
 
 ## Reading the plan
 
@@ -275,13 +313,12 @@ or chat, also check on prod:
 | `helm_release.kube_agents will be updated in-place`                                      | The upgrade itself                      | Expected         |
 | `helm_release.cert_manager[0] … in-place`                                                | The chart bumped cert-manager           | Expected         |
 | Minter `google_kms_crypto_key` / `google_service_account` in-place (labels, description) | Per-install ownership markers (0.28 on) | Expected         |
-| `google_logging_project_sink.drift_audit` in-place (filter)                              | Drift detector filter changed           | Expected on prod |
-| Any `will be destroyed` or `must be replaced`                                            | Something leaves the install            | STOP; see below  |
-| Resources in the other install's project, or the other install's backend                 | Wrong state                             | STOP             |
+| `google_logging_project_sink.drift_audit` in-place (filter)                              | The drift detector's filter changed     | Expected on prod |
+| Any `will be destroyed` or `must be replaced`                                            | Something leaves the install            | STOP             |
+| A resource in the other install's project, or the other install's state backend          | Wrong install                           | STOP             |
 
-A destroy has so far always meant a setting missing from `install.env`. Find which variable the
-resource depends on, add it to `install.env`, and plan again. Never apply a plan with a destroy you
-cannot explain.
+A destroy has so far always meant a setting missing from `install.env`. Report which resources and
+which variable they depend on; do not apply a plan with a destroy you cannot explain.
 
 ## Audits on an idle install
 
@@ -293,37 +330,38 @@ preflight's freshness check fails. Before a show, run them by hand (above, and R
 ## Rollback
 
 Not rehearsed. kube-agents' path back is the previous release's `upgrade.sh` against the same
-`install.env` (`RELEASE=<previous> scripts/upgrade.sh …`, plan first). It stops before applying
-when the move undoes a breaking change and names the commits; ask before re-running it with
-`--allow-breaking-downgrade`. The backups from step 2 hold the PlatformAgent and `install.env` as
-they were. The NATS bus is not rolled back by this; the site's rollback page
-(https://gke-labs.github.io/kube-agents/deploy/rollback/) is canonical.
+`install.env`: fetch it as in step 2, then `scripts/upgrade.sh <install> <PREVIOUS> --plan`. It stops
+before applying when the move undoes a breaking change and names the commits; STOP and ask before
+re-running it with `--allow-breaking-downgrade`. The backups from step 2 hold the PlatformAgent and
+`install.env` as they were. The site's rollback page is canonical:
+https://gke-labs.github.io/kube-agents/deploy/rollback/.
 
 ## What has gone wrong before
 
 - **Settings passed only as installer flags are lost.** The release's `upgrade.sh` re-renders the
-  install from `install.env` alone. A missing `MODEL_PROVIDER` planned the destruction of the
-  Vertex AI gateway's identity (2026-11-07); missing `SCOPE_EXCLUDE_CLUSTERS` let staging adopt all
-  20 clusters in gke-demos-345619 for a week (2026-11-07 to 11-14). `scripts/upgrade.sh` now
-  refuses an `install.env` without `MODEL_PROVIDER`, `VERTEX_LOCATION`, `MODEL_DEFAULT_NAME`,
-  `SCOPE_PROJECTS`, `TF_VAR_extra_helm_values` and, for staging, `SCOPE_EXCLUDE_CLUSTERS`.
-- **One installer checkout per install.** The installer keeps its Terraform backend in its
-  checkout. A staging dry run from prod's `~/kube-agents` planned prod's state for replacement.
-  `scripts/upgrade.sh` runs each install from its own checkout and refuses a checkout whose backend
-  names the other install. Never run kube-agents' `install.sh` or `upgrade.sh` by hand from `$HOME`
-  for staging.
+  install from `install.env` alone. A missing `MODEL_PROVIDER` planned the destruction of the Vertex
+  AI gateway's identity (2026-11-07); missing `SCOPE_EXCLUDE_CLUSTERS` let staging adopt all 20
+  clusters in gke-demos-345619 for a week (2026-11-07 to 11-14). `scripts/upgrade.sh` refuses an
+  `install.env` without `MODEL_PROVIDER`, `VERTEX_LOCATION`, `MODEL_DEFAULT_NAME`, `SCOPE_PROJECTS`,
+  `TF_VAR_extra_helm_values` and, for staging, an up-to-date `SCOPE_EXCLUDE_CLUSTERS`.
+- **The installer's checkout holds a state backend.** kube-agents' `install.sh` keeps its Terraform
+  backend in its checkout (`~/kube-agents` unless run from inside one). A staging dry run from prod's
+  checkout planned prod's state for replacement (2026-11-07); `scripts/install-staging.sh` runs from
+  `~/kcna26-staging/kube-agents` for that reason. The release's `upgrade.sh`, which
+  `scripts/upgrade.sh` runs, works in a temporary clone and derives the backend from the project and
+  cluster, so for upgrades the check is the plan's "state backend" line.
 - **The agent's env belongs to the chart.** Since 0.26 the chart replaces entries added to the
   PlatformAgent's `spec.deployment.env`. The auto-PR and fold-in settings live in
   `TF_VAR_extra_helm_values`; `scripts/tune-agent.sh` only checks them.
-- **Drift noise.** The apply runs under a person's account, so the drift detector files a triage
-  card for each object it touches (13 after one apply). They fill the worker slots an incident
-  needs: sweep with `scripts/archive-drift-cards.sh`, more than once.
-- **Leftover failed pods.** The first upgrade left two failed `platform-agent-a2a-provision-*`
-  attempts from while the bus restarted; the Job itself completed. Deleting the failed pods of a
-  completed Job is safe.
-- **The bus keeps its server count.** New installs get three NATS servers (0.29 on); an existing
-  bus cannot change its count. Setting `busReplicas` does not convert it (the operator reports
+- **Drift noise.** The apply runs under a person's account, so the drift detector files a triage card
+  for each object it touches (13 after one apply). They fill the worker slots an incident needs:
+  sweep with `scripts/archive-drift-cards.sh`, more than once.
+- **Leftover failed pods.** The first upgrade left two failed `platform-agent-a2a-provision-*` attempts
+  from while the bus restarted; the Job itself completed. Deleting the failed pods of a completed Job
+  is safe.
+- **The bus keeps its server count.** New installs get three NATS servers (0.29 on); an existing bus
+  cannot change its count, and setting `busReplicas` does not convert it (the operator reports
   `A2ABusConversionRefused`).
-- **The console parses the bot's Slack messages**, so a release can move them: 0.24 edited the
-  alert into its report, 0.31 posted a card first as its mark and step alone. Step 3e's console
-  events catch this.
+- **The console parses the bot's Slack messages**, so a release can move them: 0.24 edited the alert
+  into its report, 0.31 posted a card first as its mark and step alone. Step 3e's console events
+  catch this.

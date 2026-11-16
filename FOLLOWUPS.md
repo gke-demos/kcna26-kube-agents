@@ -13,9 +13,9 @@ Friday are for re-runs and recording. Strike items through as they close.
       `https://iap.googleapis.com/v1/oauth/clientIds/<CLIENT_ID>:handleRedirect` (add it once the
       ID exists). Save the ID and secret as `~/.kcna26/oauth-client-id` and
       `~/.kcna26/oauth-client-secret`.
-- [ ] Say go on the compliance and obtainability audits.
-- [ ] Get the compute demo cluster created in kcna-2026-demos and tell Claude (the agent pod needs
-      one restart to watch it).
+- [x] ~~Say go on the compliance and obtainability audits~~: run before the show; their ledgers are #3 and #4.
+- [x] ~~Get the compute demo cluster created~~: `autoscale-arcade` joined kcna-2026-demos by 2026-11-14;
+      kube-agents 0.24+ watches it without a restart.
 - [ ] First full run-through in Slack per RUNBOOK §3–4; fill the timings in `prompts.md`.
 - [ ] Record a backup clip per live segment (audit card and issue, alert → PR → merge, one prompt).
 - [ ] Build the deck from `slides/`, with the backup clips in the demo slot.
@@ -23,8 +23,9 @@ Friday are for re-runs and recording. Strike items through as they close.
       laptop, phone hotspot.
 - [ ] Who is Slack member `U0CE89JDMQC` in `#platform-ops`? Allowlist or remove.
 - [ ] Decide whether `kcna26-kube-agents` goes public.
-- [ ] Say when Claude may clear `#platform-ops`. (Deploying the console raises drift alerts: clear after
-      the last deploy.)
+- [x] ~~Say when Claude may clear `#platform-ops`~~: Gari asked for it repeatedly; clearing the bot's posts
+      but the audit cards (`tools/clear_channel.py --keep audit`) is now a routine step after rehearsals
+      and upgrades (UPGRADING.md 4d).
 
 - [ ] Publish the console's OAuth app (Google Auth Platform → Audience → Publish app) so google.com
       and event.goog accounts can sign in.
