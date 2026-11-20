@@ -108,7 +108,7 @@ else
 fi
 if [[ -n "$extra" ]]; then
   if [[ "$target" == staging ]]; then
-    note "extra Cluster Agent profiles (clusters adopted since the scope was last applied): $extra; step 3a's scripts/refresh-staging-scope.sh excludes them on the next upgrade"
+    note "extra Cluster Agent profiles (clusters adopted since the scope was last applied): $extra; UPGRADING.md step 3a excludes them (if 3a already ran in this upgrade, the agent drops them at its hourly reconcile)"
   else
     note "extra Cluster Agent profiles (new clusters in kcna-2026-demos, which prod watches by design): $extra"
   fi

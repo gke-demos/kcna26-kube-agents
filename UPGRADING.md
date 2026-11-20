@@ -38,7 +38,9 @@ Check each line before going on:
 gcloud auth list --format='value(account)' | grep -x garisingh@gke.ninja
 gcloud config configurations list --format='value(name)' | grep -x kcna26
 gcloud projects describe gke-demos-345619 --account=garisingh@gke.ninja --format='value(projectId)'
-gh auth status          # needs write access to the two fleet repos: the rehearsal merges PRs
+gh auth status
+gh api repos/gke-demos/kcna26-fleet-gitops --jq .permissions.push           # true: the rehearsal merges PRs
+gh api repos/gke-demos/kcna26-fleet-gitops-staging --jq .permissions.push   # true
 for f in install.env slack-bot-token github-pat; do test -s ~/.kcna26/$f && echo "prod $f ok"; done
 for f in install.env slack-bot-token github-pat; do test -s ~/.kcna26/staging/$f && echo "staging $f ok"; done
 kubectl config get-contexts -o name | grep -E '^(kube-agents-hub|boutique-prod|bank-prod|kube-agents-stg|boutique-stg)$'
@@ -314,7 +316,7 @@ posts a card to `#platform-ops`.
 
 | In the plan                                                                              | Meaning                                 | Action           |
 | ---------------------------------------------------------------------------------------- | --------------------------------------- | ---------------- |
-| `helm_release.kube_agents will be updated in-place`                                      | The upgrade itself                      | Expected         |
+| `helm_release.kube_agents will be updated in-place` (or `kube_agents[0]`, 0.35 on)       | The upgrade itself                      | Expected         |
 | `helm_release.cert_manager[0] … in-place`                                                | The chart bumped cert-manager           | Expected         |
 | Minter `google_kms_crypto_key` / `google_service_account` in-place (labels, description) | Per-install ownership markers (0.28 on) | Expected         |
 | `google_logging_project_sink.drift_audit` in-place (filter)                              | The drift detector's filter changed     | Expected on prod |
