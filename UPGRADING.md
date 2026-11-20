@@ -365,9 +365,10 @@ https://gke-labs.github.io/kube-agents/deploy/rollback/.
 - **Leftover failed pods.** The first upgrade left two failed `platform-agent-a2a-provision-*` attempts
   from while the bus restarted; the Job itself completed. Deleting the failed pods of a completed Job
   is safe.
-- **The bus keeps its server count.** New installs get three NATS servers (0.29 on); an existing bus
-  cannot change its count, and setting `busReplicas` does not convert it (the operator reports
-  `A2ABusConversionRefused`).
+- **The bus's server count.** New installs get three NATS servers (0.29 on). Until 0.34 an existing
+  bus could not change its count (the operator reported `A2ABusConversionRefused`); since 0.34,
+  changing `busReplicas` migrates it and keeps its data, freezing writes for a few minutes. Both
+  installs still run one server: migrating is a decision, not part of an upgrade.
 - **The console parses the bot's Slack messages**, so a release can move them: 0.24 edited the alert
   into its report, 0.31 posted a card first as its mark and step alone. Step 3e's console events
   catch this.

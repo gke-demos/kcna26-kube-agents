@@ -71,8 +71,14 @@ Friday are for re-runs and recording. Strike items through as they close.
       gke-demos-345619 until 2026-11-14 (about 140 triages, mostly `ap-iap-testing`; no PRs: the
       agent refuses a workload its GitOps repo does not declare). Now in `install.env`, rewritten
       on every `install-staging.sh` run.
-- [ ] Bus HA: kube-agents cannot yet change an existing bus's server count (0.29 makes new buses
-      three servers). Watch for upstream support, or recreate the bus (loses its stored sessions).
+- [ ] Bus HA: since 0.34, changing `busReplicas` from 1 to 3 migrates an existing bus and keeps its data
+      (writes freeze for a few minutes). Decide whether to migrate staging, then prod.
+- [x] ~~kube-agents 0.35.0~~ on 2026-11-20, the first upgrade run strictly by UPGRADING.md (by the hourly
+      watch, then Gari's go-ahead for prod). Plans: 0/1/0 on both. Rehearsals: staging PR 2:51, healthy 3:19;
+      prod PR 3:20, healthy 3:34. Step 0 first stopped on a cluster staging had adopted (`substrate-live`);
+      verify-install now notes that instead (2f490b5). Notes: ~/projects/scratch/kcna26-upgrade-0.35.0.notes.md.
+- [ ] `tools/clear_channel.py --keep audit` keeps every daily audit card and any drift alert whose text
+      says "audit" (37 kept on 2026-11-20): keep only the newest card per audit stream.
 - [ ] File the upstream kube-agents issues below once Gari agrees.
 
 ## Fixed on the way

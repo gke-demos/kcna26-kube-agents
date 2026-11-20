@@ -108,9 +108,9 @@ Install troubleshooting from the first build (2026-11-02, release 0.23.0):
 itself, and the human-in-the-loop moment is the merge.
 
 Installed: release `0.23.0` on 2026-11-02; `0.25.0` on 2026-11-07; `0.31.0` on 2026-11-14; `0.33.0` on
-2026-11-16, each upgraded in place after the staging install passed the same incidents. The A2A gateway runs two
-replicas with an elected leader (0.26 on); the bus stays on one NATS server, because an existing
-bus cannot change its server count.
+2026-11-16; `0.35.0` on 2026-11-20 (the first upgrade run strictly by `UPGRADING.md`), each upgraded in place after
+the staging install passed the same incidents. The A2A gateway runs two replicas with an elected leader (0.26 on).
+The bus runs one NATS server; since 0.34 `busReplicas` can migrate it to three, keeping its data (not done yet).
 
 **Upgrading** (staging first, then prod), with the verification and the whole-demo check: [`UPGRADING.md`](UPGRADING.md). Scheduled audits slow to weekly after 7 days with no chat message to the agent and stop after 14 (kube-agents 0.26+); before a show, re-run them by hand (section 2).
 
