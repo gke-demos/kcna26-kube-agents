@@ -62,9 +62,12 @@ scripts/verify-install.sh staging <CURRENT>
 scripts/verify-install.sh prod <CURRENT>
 ```
 
-Pass: exit 0. Every check line reads `ok`; `note` lines are information (`bus servers: 1` always
-appears). STOP if either exits non-zero: fix that first, because an upgrade on top of a broken
-install hides the cause.
+Pass: exit 0. Every check line reads `ok`; `note` lines are information. `bus servers: 1` always
+appears. A note naming **extra Cluster Agent profiles** on staging is a cluster another demo created
+in gke-demos-345619 since staging's scope was last applied: staging's agent added it to the clusters
+it watches (read-only; nothing is deployed on it). It is harmless, and step 3a excludes it as part
+of this upgrade, so carry on. STOP if either exits non-zero: fix that first, because an upgrade on
+top of a broken install hides the cause.
 
 ## 1. Review the release
 
@@ -163,7 +166,8 @@ Pass: `verify-install.sh` exits 0. A `note` naming a condition is advisory: read
 (`kubectl --context kube-agents-stg -n kubeagents-system get platformagent platform-agent -o yaml`,
 under `status.conditions`) and STOP to ask whether it needs an `install.env` setting, as 0.28's
 `ScopeUndeclared` did (`SCOPE_PROJECTS`). `Ready=False` right after an apply is the rollout: re-run a
-minute later. A profile mismatch right after a scope change clears at the agent's hourly reconcile.
+minute later. An "extra Cluster Agent profiles" note right after 3a excluded a cluster is expected:
+the agent drops that profile at its hourly reconcile.
 
 **3e. Rehearse an incident.**
 

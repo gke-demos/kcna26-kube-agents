@@ -94,12 +94,24 @@ else
   bad "no 'slack connected' as $slack_user in the A2A gateway's log"
 fi
 
-have="$(k exec "deploy/$AGENT_DEPLOYMENT" -c "$AGENT_CONTAINER" -- ls "$PROFILES_DIR" 2>/dev/null | grep '^cluster-' | sort | tr '\n' ' ')"
-want="$(tr ' ' '\n' <<<"$profiles" | sort | tr '\n' ' ')"
-if [[ "$have" == "$want" ]]; then
-  ok "Cluster Agent profiles: $(wc -w <<<"$have")"
+# The install's own clusters must have profiles. An extra one is a cluster the
+# agent adopted from its project since the scope was last applied (another demo
+# created it): harmless, so a note. Staging's next upgrade excludes it (step 3a).
+have="$(k exec "deploy/$AGENT_DEPLOYMENT" -c "$AGENT_CONTAINER" -- ls "$PROFILES_DIR" 2>/dev/null | grep '^cluster-' | sort)"
+want="$(tr ' ' '\n' <<<"$profiles" | sort)"
+missing="$(comm -13 <(echo "$have") <(echo "$want") | paste -sd' ' -)"
+extra="$(comm -23 <(echo "$have") <(echo "$want") | paste -sd' ' -)"
+if [[ -z "$missing" ]]; then
+  ok "Cluster Agent profiles: all $(wc -l <<<"$want") expected"
 else
-  bad "Cluster Agent profiles: have [${have% }], want [${want% }] (a new cluster in the project, or lost exclusions; the reconcile runs hourly)"
+  bad "Cluster Agent profiles missing: $missing"
+fi
+if [[ -n "$extra" ]]; then
+  if [[ "$target" == staging ]]; then
+    note "extra Cluster Agent profiles (clusters adopted since the scope was last applied): $extra; step 3a's scripts/refresh-staging-scope.sh excludes them on the next upgrade"
+  else
+    note "extra Cluster Agent profiles (new clusters in kcna-2026-demos, which prod watches by design): $extra"
+  fi
 fi
 
 stuck="$(k get pods --no-headers 2>/dev/null | awk '$3 != "Running" && $3 != "Completed" {print $1" "$3}')"
