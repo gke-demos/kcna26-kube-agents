@@ -27,8 +27,11 @@ stands alone: shell variables do not carry from one block to the next, so where 
 | gcloud                           | account `garisingh@gke.ninja` (`scripts/upgrade.sh` pins it)     | the same account, gcloud configuration `kcna26`                                                      |
 | Console (fleet-scope)            | port-forward only (`--dev`)                                      | https://kcna26.demo.gke.ninja behind IAP                                                             |
 
-Both run `spec.mode: next`, Gemini 3.8 Flash on Vertex AI, and one NATS bus server. The release they
-run is the RUNBOOK's "Installed:" line and `RELEASE=` in `scripts/install-hub.sh`.
+Both run `spec.mode: next`, Gemini 3.8 Flash on Vertex AI, and one NATS bus server. **Each install has
+its own release**, its pin: `scripts/current-release.sh staging` and `scripts/current-release.sh prod`
+print them (`RELEASE=` in `scripts/install-staging.sh` and `scripts/install-hub.sh`). Staging's pin moves
+at the end of step 3 and prod's at step 5, so staging is often ahead while prod waits for a go-ahead.
+That is normal: each install upgrades from its own release to the newest.
 
 ## 0. Prerequisites
 
@@ -56,12 +59,11 @@ gcloud container clusters get-credentials boutique-stg --zone us-central1-b --pr
 kubectl config rename-context gke_gke-demos-345619_us-central1-b_boutique-stg boutique-stg
 ```
 
-Then confirm both installs are healthy on the release they run now (from the RUNBOOK's
-"Installed:" line), before changing anything:
+Then confirm both installs are healthy on the release each runs now, before changing anything:
 
 ```bash
-scripts/verify-install.sh staging <CURRENT>
-scripts/verify-install.sh prod <CURRENT>
+scripts/verify-install.sh staging "$(scripts/current-release.sh staging)"
+scripts/verify-install.sh prod "$(scripts/current-release.sh prod)"
 ```
 
 Pass: exit 0. Every check line reads `ok`; `note` lines are information. `bus servers: 1` always
@@ -74,9 +76,13 @@ top of a broken install hides the cause.
 ## 1. Review the release
 
 ```bash
+scripts/current-release.sh staging; scripts/current-release.sh prod
 gh release list -R gke-labs/kube-agents --limit 8
-python3 -I tools/release_notes.py <each release after CURRENT, up to TARGET, e.g. 0.34.0 0.35.0>
+python3 -I tools/release_notes.py <each release after the OLDER of the two, up to TARGET, e.g. 0.36.0 0.37.0>
 ```
+
+Review from the older of the two installs' releases (usually prod's): prod jumps across every release
+in between, while staging may have taken some of them already.
 
 The script prints the entries an install can see, the entries marked breaking, and the upgrade
 page's breaking-change rows for those releases. Read all of it, then:
@@ -211,6 +217,11 @@ FLEET_REPO=gke-demos/kcna26-fleet-gitops-staging scripts/reset.sh
 scripts/archive-drift-cards.sh kube-agents-stg
 ```
 
+**3h. Record staging's release.** Set `readonly RELEASE="<RELEASE>"` in `scripts/install-staging.sh`
+(check: `scripts/current-release.sh staging` prints the release), commit
+(`chore: staging runs kube-agents <RELEASE>`) and push to `main`. Staging is now ahead of prod until
+step 4.
+
 ## 4. Prod
 
 STOP: report the staging results (plan counts, verification, rehearsal timings, any console change)
@@ -225,7 +236,8 @@ sed 's/\x1b\[[0-9;]*m//g' /tmp/prod-plan.log | grep -E 'refusing|Target Image|GK
 
 The state backend must be `gs://kcna-2026-demos-kube-agents-tfstate/kube-agents/kube-agents-hub`,
 and the plan should have staging's shape. STOP on a destroy, a replacement, or any change staging's
-plan did not have.
+plan did not have. Prod may jump more releases than staging did in this run (it upgrades from its own
+release); step 1 reviewed them all, so the plan's shape is still the check.
 
 **4b. Apply and verify.**
 
@@ -272,7 +284,8 @@ install"); every other line must be `ok`.
 
 ## 5. Record
 
-1. Pin the release: `RELEASE="<RELEASE>"` in `scripts/install-hub.sh` and `scripts/install-staging.sh`.
+1. Pin prod's release: `readonly RELEASE="<RELEASE>"` in `scripts/install-hub.sh` (staging's moved at
+   step 3h). Check: `scripts/current-release.sh prod`.
 2. RUNBOOK: add the release and the date to the "Installed:" line, and anything the release changed
    about running the demo.
 3. FOLLOWUPS: one checked item with the date, the plan counts and both rehearsals' timings, plus open
