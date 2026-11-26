@@ -174,8 +174,8 @@ scripts/archive-drift-cards.sh kube-agents-stg
 scripts/verify-install.sh staging <RELEASE>
 ```
 
-Pass: `verify-install.sh` exits 0. An `info` line is a condition known to be healthy (from 0.37,
-`ProfileSupervisorForm=True`). A `note` naming a condition is advisory: read its message
+Pass: `verify-install.sh` exits 0. An `info` line is a condition known to be healthy
+(`ProfileSupervisorForm=True` from 0.37, `InferenceKeysServed=True` from 0.40). A `note` naming a condition is advisory: read its message
 (`kubectl --context kube-agents-stg -n kubeagents-system get platformagent platform-agent -o yaml`,
 under `status.conditions`) and STOP to ask whether it needs an `install.env` setting, as 0.28's
 `ScopeUndeclared` did (`SCOPE_PROJECTS`). `Ready=False` right after an apply is the rollout: re-run a

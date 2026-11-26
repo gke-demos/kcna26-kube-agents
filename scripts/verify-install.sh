@@ -23,6 +23,9 @@ readonly HEALTHY_TRUE="Ready BusCredentialsReady BusProvisioned A2AIdentityMapAp
 # means a reader runs another image, and later releases stop reading the old subject.
 readonly SUPERVISOR_FORM="ProfileSupervisorForm"
 readonly SUPERVISOR_FORM_SINCE="0.37.0"
+# Known-healthy True conditions, printed as info. InferenceKeysServed (0.40+): the
+# LiteLLM pods admit the operator-minted caller keys, which callers send from 0.41.
+readonly INFO_TRUE="InferenceKeysServed"
 
 target="${1:-}" release="${2:-}"
 case "$target" in
@@ -68,6 +71,8 @@ while IFS=$'\t' read -r type status reason; do
   if [[ "$type" == "$SUPERVISOR_FORM" ]]; then
     [[ "$status" == "True" ]] && echo "info  condition $type=True ($reason): latched, expected from $SUPERVISOR_FORM_SINCE" ||
       bad "condition $type=$status ($reason): a bus reader is not on the release's image; read its message"
+  elif [[ " $INFO_TRUE " == *" $type "* && "$status" == "True" ]]; then
+    echo "info  condition $type=True ($reason)"
   elif [[ " $HEALTHY_TRUE " == *" $type "* ]]; then
     [[ "$status" == "True" ]] || bad "condition $type=$status ($reason)"
   elif [[ "$status" == "True" ]]; then
