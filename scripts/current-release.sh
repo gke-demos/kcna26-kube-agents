@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Print the kube-agents release an install runs, from its pin: RELEASE= in
-# scripts/install-staging.sh (staging) or scripts/install-hub.sh (prod). Staging's
-# pin moves at the end of UPGRADING.md step 3, prod's at step 5, so staging can be
-# ahead while prod waits for a go-ahead.
+# scripts/install-staging.sh (staging) or scripts/install-hub.sh (prod). Each pin
+# moves as soon as its install's apply passes (UPGRADING.md 3c, 4b), so staging can
+# be ahead while prod waits for a go-ahead.
 #
 # Usage: current-release.sh staging|prod
 set -euo pipefail

@@ -18,6 +18,11 @@ readonly IMAGE_REPO_PREFIX="ghcr.io/gke-labs/kube-agents/"
 readonly MODEL="gemini-3.8-flash"
 # Conditions that are expected True; anything else True is reported as a note.
 readonly HEALTHY_TRUE="Ready BusCredentialsReady BusProvisioned A2AIdentityMapApplied DispatcherCeiling DispatcherJobMode GatewayElected BusStreamsPresent"
+# Latched True from 0.37 once every bus reader runs the release's images: profile
+# task terminals use the six-token supervisor subject. False (ReaderNotOnReleaseImage)
+# means a reader runs another image, and later releases stop reading the old subject.
+readonly SUPERVISOR_FORM="ProfileSupervisorForm"
+readonly SUPERVISOR_FORM_SINCE="0.37.0"
 
 target="${1:-}" release="${2:-}"
 case "$target" in
@@ -60,12 +65,19 @@ ready="$(jq -r '.status.conditions[]? | select(.type == "Ready") | .status' <<<"
 [[ "$ready" == "True" ]] && ok "Ready" || bad "Ready=${ready:-<unset>} (wait a minute after an apply, then re-run)"
 while IFS=$'\t' read -r type status reason; do
   [[ -z "$type" ]] && continue
-  if [[ " $HEALTHY_TRUE " == *" $type "* ]]; then
+  if [[ "$type" == "$SUPERVISOR_FORM" ]]; then
+    [[ "$status" == "True" ]] && echo "info  condition $type=True ($reason): latched, expected from $SUPERVISOR_FORM_SINCE" ||
+      bad "condition $type=$status ($reason): a bus reader is not on the release's image; read its message"
+  elif [[ " $HEALTHY_TRUE " == *" $type "* ]]; then
     [[ "$status" == "True" ]] || bad "condition $type=$status ($reason)"
   elif [[ "$status" == "True" ]]; then
     note "condition $type=True ($reason): read its message (kubectl get platformagent -o yaml)"
   fi
 done < <(jq -r '.status.conditions[]? | [.type, .status, .reason] | @tsv' <<<"$cr")
+supervisor_form="$(jq -r --arg t "$SUPERVISOR_FORM" '.status.conditions[]? | select(.type == $t) | .status' <<<"$cr")"
+if [[ -z "$supervisor_form" ]] && [[ "$(printf '%s\n' "$SUPERVISOR_FORM_SINCE" "$release" | sort -V | head -1)" == "$SUPERVISOR_FORM_SINCE" ]]; then
+  bad "condition $SUPERVISOR_FORM absent on $release (still rolling out: re-run in a minute)"
+fi
 note "bus servers: $(jq -r '.status.busReplicas // "?"' <<<"$cr")"
 
 for d in "$OPERATOR" "$AGENT_DEPLOYMENT" "$A2A_GATEWAY"; do

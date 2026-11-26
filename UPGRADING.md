@@ -29,8 +29,8 @@ stands alone: shell variables do not carry from one block to the next, so where 
 
 Both run `spec.mode: next`, Gemini 3.8 Flash on Vertex AI, and one NATS bus server. **Each install has
 its own release**, its pin: `scripts/current-release.sh staging` and `scripts/current-release.sh prod`
-print them (`RELEASE=` in `scripts/install-staging.sh` and `scripts/install-hub.sh`). Staging's pin moves
-at the end of step 3 and prod's at step 5, so staging is often ahead while prod waits for a go-ahead.
+print them (`RELEASE=` in `scripts/install-staging.sh` and `scripts/install-hub.sh`). Each pin moves
+as soon as its install's apply succeeds (3c, 4b), so it always names what the install runs. Staging is often ahead while prod waits for a go-ahead.
 That is normal: each install upgrades from its own release to the newest.
 
 ## 0. Prerequisites
@@ -163,6 +163,10 @@ Pass: `exit 0`, `Apply complete!` with the same counts as the plan, and `Upgrade
 setup checklist printed after it is the installer's generic reminder; nothing in it is new. STOP on
 any other result.
 
+On a pass, pin staging's release at once, even if a later step stops the run: set
+`readonly RELEASE="<RELEASE>"` in `scripts/install-staging.sh` and check that
+`scripts/current-release.sh staging` prints it. Step 3h commits it.
+
 **3d. Verify.**
 
 ```bash
@@ -170,7 +174,8 @@ scripts/archive-drift-cards.sh kube-agents-stg
 scripts/verify-install.sh staging <RELEASE>
 ```
 
-Pass: `verify-install.sh` exits 0. A `note` naming a condition is advisory: read its message
+Pass: `verify-install.sh` exits 0. An `info` line is a condition known to be healthy (from 0.37,
+`ProfileSupervisorForm=True`). A `note` naming a condition is advisory: read its message
 (`kubectl --context kube-agents-stg -n kubeagents-system get platformagent platform-agent -o yaml`,
 under `status.conditions`) and STOP to ask whether it needs an `install.env` setting, as 0.28's
 `ScopeUndeclared` did (`SCOPE_PROJECTS`). `Ready=False` right after an apply is the rollout: re-run a
@@ -217,8 +222,8 @@ FLEET_REPO=gke-demos/kcna26-fleet-gitops-staging scripts/reset.sh
 scripts/archive-drift-cards.sh kube-agents-stg
 ```
 
-**3h. Record staging's release.** Set `readonly RELEASE="<RELEASE>"` in `scripts/install-staging.sh`
-(check: `scripts/current-release.sh staging` prints the release), commit
+**3h. Record staging's release.** The pin moved at 3c; commit `scripts/install-staging.sh` with any
+script or doc fixes from the run
 (`chore: staging runs kube-agents <RELEASE>`) and push to `main`. Staging is now ahead of prod until
 step 4.
 
@@ -248,7 +253,8 @@ scripts/archive-drift-cards.sh kube-agents-hub
 scripts/verify-install.sh prod <RELEASE>
 ```
 
-Pass as for staging (3c, 3d).
+Pass as for staging (3c, 3d). On a passing apply, pin prod's release at once:
+`readonly RELEASE="<RELEASE>"` in `scripts/install-hub.sh` (check: `scripts/current-release.sh prod`).
 
 **4c. Console.** Only if 3f changed the console: deploy the same tag to prod (behind IAP, not
 `--dev`), then check the public URL still answers with IAP's sign-in redirect:
@@ -284,8 +290,8 @@ install"); every other line must be `ok`.
 
 ## 5. Record
 
-1. Pin prod's release: `readonly RELEASE="<RELEASE>"` in `scripts/install-hub.sh` (staging's moved at
-   step 3h). Check: `scripts/current-release.sh prod`.
+1. Check both pins (moved at 3c and 4b): `scripts/current-release.sh staging` and
+   `scripts/current-release.sh prod` print the release.
 2. RUNBOOK: add the release and the date to the "Installed:" line, and anything the release changed
    about running the demo.
 3. FOLLOWUPS: one checked item with the date, the plan counts and both rehearsals' timings, plus open
@@ -350,7 +356,9 @@ preflight's freshness check fails. Before a show, run them by hand (above, and R
 
 Not rehearsed. kube-agents' path back is the previous release's `upgrade.sh` against the same
 `install.env`: fetch it as in step 2, then `scripts/upgrade.sh <install> <PREVIOUS> --plan`. It stops
-before applying when the move undoes a breaking change and names the commits; STOP and ask before
+before applying when the move undoes a breaking change and names the commits. From 0.37 the operator
+latches `ProfileSupervisorForm=True` and moves the bus's task terminals to a subject releases before
+0.37 do not read, so going back below 0.37 after the latch is not a clean move; STOP and ask before
 re-running it with `--allow-breaking-downgrade`. The backups from step 2 hold the PlatformAgent and
 `install.env` as they were. The site's rollback page is canonical:
 https://gke-labs.github.io/kube-agents/deploy/rollback/.
