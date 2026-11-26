@@ -108,7 +108,8 @@ Install troubleshooting from the first build (2026-11-02, release 0.23.0):
 itself, and the human-in-the-loop moment is the merge.
 
 Installed: release `0.23.0` on 2026-11-02; `0.25.0` on 2026-11-07; `0.31.0` on 2026-11-14; `0.33.0` on
-2026-11-16; `0.35.0` on 2026-11-20 (the first upgrade run strictly by `UPGRADING.md`), each upgraded in place after
+2026-11-16; `0.35.0` on 2026-11-20 (the first upgrade run strictly by `UPGRADING.md`); `0.41.0` on 2026-11-26 (staging
+had taken 0.36 and 0.39), each upgraded in place after
 the staging install passed the same incidents. The A2A gateway runs two replicas with an elected leader (0.26 on).
 The bus runs one NATS server; since 0.34 `busReplicas` can migrate it to three, keeping its data (not done yet).
 

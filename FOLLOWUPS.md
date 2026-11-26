@@ -77,6 +77,11 @@ Friday are for re-runs and recording. Strike items through as they close.
       watch, then Gari's go-ahead for prod). Plans: 0/1/0 on both. Rehearsals: staging PR 2:51, healthy 3:19;
       prod PR 3:20, healthy 3:34. Step 0 first stopped on a cluster staging had adopted (`substrate-live`);
       verify-install now notes that instead (2f490b5). Notes: ~/projects/scratch/kcna26-upgrade-0.35.0.notes.md.
+- [x] ~~kube-agents 0.41.0~~ on 2026-11-26: staging 0.39.0 → 0.41.0, prod 0.35.0 → 0.41.0. Plans: 0/1/0 on both.
+      Rehearsals: staging PR 3:10, healthy 3:45; prod PR 2:01, healthy 2:32. The 0.39.0 watch run stopped at 3d on
+      `ProfileSupervisorForm=True` (the 0.37 latch, healthy), and its pin wasn't moved, which blocked the next two
+      runs: pins now move at 3c/4b, verify-install prints known-healthy conditions as `info` (13fae84, e43c1d0).
+      Notes: ~/projects/scratch/kcna26-upgrade-0.41.0.notes.md.
 - [ ] `tools/clear_channel.py --keep audit` keeps every daily audit card and any drift alert whose text
       says "audit" (37 kept on 2026-11-20): keep only the newest card per audit stream.
 - [ ] File the upstream kube-agents issues below once Gari agrees.
