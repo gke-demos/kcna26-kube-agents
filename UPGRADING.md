@@ -339,6 +339,7 @@ posts a card to `#platform-ops`.
 | `helm_release.cert_manager[0] … in-place`                                                | The chart bumped cert-manager           | Expected         |
 | Minter `google_kms_crypto_key` / `google_service_account` in-place (labels, description) | Per-install ownership markers (0.28 on) | Expected         |
 | `google_logging_project_sink.drift_audit` in-place (filter)                              | The drift detector's filter changed     | Expected on prod |
+| `module.gke_cluster.terraform_data.create_after` in-place (`input`)                      | An ordering anchor; no cloud resource   | Expected (0.42)  |
 | Any `will be destroyed` or `must be replaced`                                            | Something leaves the install            | STOP             |
 | A resource in the other install's project, or the other install's state backend          | Wrong install                           | STOP             |
 
